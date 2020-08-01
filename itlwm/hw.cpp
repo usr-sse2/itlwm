@@ -611,6 +611,24 @@ iwm_stop_device(struct iwm_softc *sc)
     XYLog("%s\n", __FUNCTION__);
     int chnl, ntries;
     int qid;
+
+#ifdef AIRPORT
+	/* We won't complete scanning, so report empty result to prevent client from hanging */
+	if (fInteropScanResult) {
+		/*for (int i = 0; i < fInteropScanResult->count; i++)
+			if (fInteropScanResult->networks[i].ni_rsnie != nullptr)
+				IOFree(fInteropScanResult->networks[i].ni_rsnie, 2 + fInteropScanResult->networks[i].ni_rsnie[1]);
+		if (fInteropScanResult->networks)
+			IOFree(fInteropScanResult->networks, fInteropScanResult->count * sizeof(interop_scan_result_network));
+		IOFree(fInteropScanResult, sizeof(interop_scan_result));*/
+	}
+
+	fInteropScanResult = (interop_scan_result*)IOMalloc(sizeof(interop_scan_result));
+	fInteropScanResult->count = 0;
+	fInteropScanResult->networks = nullptr;
+
+	messageClients(iokit_vendor_specific_msg(IWM_SCAN_COMPLETE_NOTIFICATION));
+#endif
     
     iwm_disable_interrupts(sc);
     sc->sc_flags &= ~IWM_FLAG_USE_ICT;

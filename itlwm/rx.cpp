@@ -273,7 +273,11 @@ iwm_rx_addbuf(struct iwm_softc *sc, int size, int idx)
     
 //    mbuf_allocpacket(MBUF_WAITOK, size, NULL, &m);
     
+#ifdef AIRPORT
+    m = fController->allocatePacket(size);
+#else
     m = allocatePacket(size);
+#endif
 //
     if (m == NULL) {
         XYLog("%s allocatePacket==NULL\n", __FUNCTION__);

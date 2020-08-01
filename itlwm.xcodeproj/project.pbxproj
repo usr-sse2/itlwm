@@ -68,6 +68,8 @@
 		024A08D223FCF395009FBA6C /* led.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 024A08D123FCF395009FBA6C /* led.cpp */; };
 		024A08D423FCF3E6009FBA6C /* power.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 024A08D323FCF3E6009FBA6C /* power.cpp */; };
 		024A08D623FCF4D7009FBA6C /* scan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 024A08D523FCF4D7009FBA6C /* scan.cpp */; };
+		359EF16E24D43DB80019D387 /* interop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 35360A2324D2B253005E266C /* interop.cpp */; };
+		35B6977F24D2C18E00096A15 /* interop.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 35360A2424D2B253005E266C /* interop.hpp */; };
 		5076FA8024CC71E40011B2BB /* FwBinary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5076FA7F24CC71E40011B2BB /* FwBinary.cpp */; };
 		5076FA8124CC71E40011B2BB /* FwBinary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5076FA7F24CC71E40011B2BB /* FwBinary.cpp */; };
 		F88D2B3D2414E64000BBE700 /* sha1-pbkdf2.c in Sources */ = {isa = PBXBuildFile; fileRef = F88D2B3B2414E64000BBE700 /* sha1-pbkdf2.c */; };
@@ -328,6 +330,8 @@
 		024A08D123FCF395009FBA6C /* led.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = led.cpp; sourceTree = "<group>"; };
 		024A08D323FCF3E6009FBA6C /* power.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = power.cpp; sourceTree = "<group>"; };
 		024A08D523FCF4D7009FBA6C /* scan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = scan.cpp; sourceTree = "<group>"; };
+		35360A2324D2B253005E266C /* interop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = interop.cpp; sourceTree = "<group>"; };
+		35360A2424D2B253005E266C /* interop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = interop.hpp; sourceTree = "<group>"; };
 		5076FA7F24CC71E40011B2BB /* FwBinary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FwBinary.cpp; sourceTree = "<group>"; };
 		F88D2B3B2414E64000BBE700 /* sha1-pbkdf2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sha1-pbkdf2.c"; sourceTree = "<group>"; };
 		F8A33572244AED060039DA12 /* IOTaskQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IOTaskQueue.cpp; sourceTree = "<group>"; };
@@ -489,6 +493,8 @@
 				F8D76361244F21BB00DEA040 /* pm.cpp */,
 				F8E49A12249B923500BE6868 /* ItlNetworkUserClient.cpp */,
 				F8E49A13249B923500BE6868 /* ItlNetworkUserClient.hpp */,
+				35360A2324D2B253005E266C /* interop.cpp */,
+				35360A2424D2B253005E266C /* interop.hpp */,
 			);
 			path = itlwm;
 			sourceTree = "<group>";
@@ -712,6 +718,7 @@
 				024A084B23FCBC6C009FBA6C /* rijndael.h in Headers */,
 				024A083923FCBC6C009FBA6C /* md5.h in Headers */,
 				F8C2EC5F2408031A007A9422 /* ieee80211_radiotap.h in Headers */,
+				35B6977F24D2C18E00096A15 /* interop.hpp in Headers */,
 				024A084023FCBC6C009FBA6C /* rmd160.h in Headers */,
 				024A083823FCBC6C009FBA6C /* poly1305.h in Headers */,
 				F8C2EC9424080557007A9422 /* endian.h in Headers */,
@@ -1043,6 +1050,7 @@
 				024A08C223FCD999009FBA6C /* io.cpp in Sources */,
 				024A083323FCBC6C009FBA6C /* set_key.c in Sources */,
 				024A08C423FCDC14009FBA6C /* rx.cpp in Sources */,
+				359EF16E24D43DB80019D387 /* interop.cpp in Sources */,
 				F8C2EC5C2408031A007A9422 /* ieee80211_crypto_tkip.c in Sources */,
 				024A085123FCBC6C009FBA6C /* blf.c in Sources */,
 			);
@@ -1254,9 +1262,9 @@
 				MARKETING_VERSION = 1.0.0;
 				MODULE_NAME = com.zxystd.itlwm;
 				MODULE_VERSION = "$(MARKETING_VERSION)";
+				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_BUNDLE_IDENTIFIER = com.zxystd.itlwm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.12;
 				SYSTEM_HEADER_SEARCH_PATHS = "itl80211/openbsd itl80211";
 				WRAPPER_EXTENSION = kext;
 			};
@@ -1274,6 +1282,7 @@
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_INPUT_FILETYPE = sourcecode.cpp.cpp;
+				GCC_PREPROCESSOR_DEFINITIONS = "ITLWM_VERSION=\\\"${MARKETING_VERSION}\\\"";
 				INFOPLIST_FILE = itlwm/Info.plist;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1285,9 +1294,9 @@
 				MARKETING_VERSION = 1.0.0;
 				MODULE_NAME = com.zxystd.itlwm;
 				MODULE_VERSION = "$(MARKETING_VERSION)";
+				OTHER_CFLAGS = "-fstack-protector-all";
 				PRODUCT_BUNDLE_IDENTIFIER = com.zxystd.itlwm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx10.12;
 				SYSTEM_HEADER_SEARCH_PATHS = "itl80211/openbsd itl80211";
 				WRAPPER_EXTENSION = kext;
 			};

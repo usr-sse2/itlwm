@@ -261,9 +261,7 @@ ieee80211_ess_setnwkeys(struct ieee80211_ess *ess,
             k->k_cipher = IEEE80211_CIPHER_WEP104;
         k->k_len = ieee80211_cipher_keylen(k->k_cipher);
         k->k_flags = IEEE80211_KEY_GROUP | IEEE80211_KEY_TX;
-        error = copyin((const user_addr_t)nwkey->i_key[i].i_keydat, k->k_key, k->k_len);
-        if (error != 0)
-            return error;
+        memcpy(k->k_key, nwkey->i_key[i].i_keydat, k->k_len);
     }
     ess->def_txkey = nwkey->i_defkid - 1;
     ess->flags |= IEEE80211_F_WEPON;
@@ -1127,30 +1125,36 @@ ieee80211_match_bss(struct ieee80211com *ic, struct ieee80211_node *ni,
     }
     
     if (ic->ic_if.if_flags & IFF_DEBUG) {
-        DPRINTF(("%s: %c %s%c", ic->ic_if.if_xname, fail ? '-' : '+',
+        XYLog("%s: %c %s%c %3d%c %+4d %2dM%c %4s%c %7s%c %3s%c %.*s %s\n",
+			  ic->ic_if.if_xname,
+			  fail ? '-' : '+',
               ether_sprintf(ni->ni_bssid),
-              fail & IEEE80211_NODE_ASSOCFAIL_BSSID ? '!' : ' '));
-        DPRINTF((" %3d%c", ieee80211_chan2ieee(ic, ni->ni_chan),
-              fail & IEEE80211_NODE_ASSOCFAIL_CHAN ? '!' : ' '));
-        DPRINTF((" %+4d", ni->ni_rssi));
-        DPRINTF((" %2dM%c", (rate & IEEE80211_RATE_VAL) / 2,
-              fail & IEEE80211_NODE_ASSOCFAIL_BASIC_RATE ? '!' : ' '));
-        DPRINTF((" %4s%c",
+              fail & IEEE80211_NODE_ASSOCFAIL_BSSID ? '!' : ' ',
+
+			  ieee80211_chan2ieee(ic, ni->ni_chan),
+              fail & IEEE80211_NODE_ASSOCFAIL_CHAN ? '!' : ' ',
+
+			  ni->ni_rssi,
+
+			  (rate & IEEE80211_RATE_VAL) / 2,
+              fail & IEEE80211_NODE_ASSOCFAIL_BASIC_RATE ? '!' : ' ',
+
               (ni->ni_capinfo & IEEE80211_CAPINFO_ESS) ? "ess" :
               (ni->ni_capinfo & IEEE80211_CAPINFO_IBSS) ? "ibss" :
               "????",
-              fail & IEEE80211_NODE_ASSOCFAIL_IBSS ? '!' : ' '));
-        DPRINTF((" %7s%c ",
+              fail & IEEE80211_NODE_ASSOCFAIL_IBSS ? '!' : ' ',
+
               (ni->ni_capinfo & IEEE80211_CAPINFO_PRIVACY) ?
               "privacy" : "no",
-              fail & IEEE80211_NODE_ASSOCFAIL_PRIVACY ? '!' : ' '));
-        DPRINTF((" %3s%c ",
+              fail & IEEE80211_NODE_ASSOCFAIL_PRIVACY ? '!' : ' ',
+
               (ic->ic_flags & IEEE80211_F_RSNON) ?
               "rsn" : "no",
-              fail & IEEE80211_NODE_ASSOCFAIL_WPA_PROTO ? '!' : ' '));
-        ieee80211_print_essid(ni->ni_essid, ni->ni_esslen);
-        DPRINTF(("%s\n",
-              fail & IEEE80211_NODE_ASSOCFAIL_ESSID ? "!" : ""));
+              fail & IEEE80211_NODE_ASSOCFAIL_WPA_PROTO ? '!' : ' ',
+
+			  ni->ni_esslen + 1,
+			  ni->ni_essid,
+              fail & IEEE80211_NODE_ASSOCFAIL_ESSID ? "!" : "");
     }
     
     /* We don't care about unrelated networks during background scans. */
@@ -1415,6 +1419,14 @@ ieee80211_end_scan(struct ifnet *ifp)
         return;
     }
 #endif
+#ifdef AIRPORT
+	if (bgscan || ic->ic_xflags & IEEE80211_F_EXTERNAL_MGMT) { // Don't switch networks if not asked to!
+		ic->ic_bgscan_fail = 0;
+		ic->ic_flags &= ~IEEE80211_F_BGSCAN;
+		return;
+	}
+#endif
+
     if (ni == NULL) {
         DPRINTF(("no scan candidate\n"));
     notfound:

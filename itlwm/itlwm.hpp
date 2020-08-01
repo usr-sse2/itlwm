@@ -13,6 +13,9 @@
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 * GNU General Public License for more details.
 */
+#ifndef __itlwm_hpp
+#define __itlwm_hpp
+
 #include "compat.h"
 #include "itlhdr.h"
 #include "kernel.h"
@@ -28,6 +31,10 @@
 #include <libkern/OSKextLib.h>
 #include <libkern/c++/OSMetaClass.h>
 #include <IOKit/IOFilterInterruptEventSource.h>
+#include "interop.hpp"
+
+#define IWM_NETWORK_CHANGED_NOTIFICATION 1
+#define IWM_SCAN_COMPLETE_NOTIFICATION 2
 
 enum
 {
@@ -36,7 +43,17 @@ enum
     kPowerStateCount
 };
 
+#ifdef AIRPORT
+#define ETHERNET_OVERRIDE
+#else
+#define ETHERNET_OVERRIDE override
+#endif
+
+#ifdef AIRPORT
+class itlwm : public IOService {
+#else
 class itlwm : public IOEthernetController {
+#endif
     OSDeclareDefaultStructors(itlwm)
     
 public:
@@ -47,26 +64,31 @@ public:
     IOService* probe(IOService* provider, SInt32* score) override;
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
+    IOReturn enable(IONetworkInterface *netif) ETHERNET_OVERRIDE;
+    IOReturn disable(IONetworkInterface *netif) ETHERNET_OVERRIDE;
+#ifndef AIRPORT
     IOReturn getHardwareAddress(IOEthernetAddress* addrP) override;
-    IOReturn enable(IONetworkInterface *netif) override;
-    IOReturn disable(IONetworkInterface *netif) override;
     UInt32 outputPacket(mbuf_t, void * param) override;
     IOReturn setPromiscuousMode(IOEnetPromiscuousMode mode) override;
     IOReturn setMulticastMode(IOEnetMulticastMode mode) override;
     IOReturn setMulticastList(IOEthernetAddress* addr, UInt32 len) override;
     bool configureInterface(IONetworkInterface *netif) override;
+#endif
     static IOReturn tsleepHandler(OSObject* owner, void* arg0 = 0, void* arg1 = 0, void* arg2 = 0, void* arg3 = 0);
     int tsleep_nsec(void *ident, int priority, const char *wmesg, int timo);
     void wakeupOn(void* ident);
     static bool intrFilter(OSObject *object, IOFilterInterruptEventSource *src);
     void watchdogAction(IOTimerEventSource *timer);
     static IOReturn _iwm_start_task(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3);
-    virtual bool createWorkLoop() override;
+    virtual bool createWorkLoop() ETHERNET_OVERRIDE;
     virtual IOWorkLoop* getWorkLoop() const override;
+    virtual IOCommandGate* getCommandGate() const;
+#ifndef AIRPORT
     virtual const OSString * newVendorString() const override;
     virtual const OSString * newModelString() const override;
     virtual IOReturn getMaxPacketSize(UInt32* maxSize) const override;
     virtual IONetworkInterface * createInterface() override;
+#endif
     
     void releaseAll();
     void joinSSID(const char *ssid, const char *pwd);
@@ -81,18 +103,20 @@ public:
     //-----------------------------------------------------------------------
     // Power management support.
     //-----------------------------------------------------------------------
-    virtual IOReturn registerWithPolicyMaker( IOService * policyMaker ) override;
+    virtual IOReturn registerWithPolicyMaker( IOService * policyMaker ) ETHERNET_OVERRIDE;
     virtual IOReturn setPowerState( unsigned long powerStateOrdinal,
                                     IOService *   policyMaker) override;
-    virtual IOReturn setWakeOnMagicPacket( bool active ) override;
+    virtual IOReturn setWakeOnMagicPacket( bool active ) ETHERNET_OVERRIDE;
     void setPowerStateOff(void);
     void setPowerStateOn(void);
     void unregistPM();
     
+#ifndef AIRPORT
     bool createMediumTables(const IONetworkMedium **primary);
     virtual IOReturn getPacketFilters(const OSSymbol *group, UInt32 *filters) const override;
     virtual IOReturn selectMedium(const IONetworkMedium *medium) override;
 //    UInt32 getFeatures() const override;
+#endif
     
     //utils
     int    iwm_send_bt_init_conf(struct iwm_softc *);
@@ -392,9 +416,14 @@ public:
     IONetworkMedium *autoMedium;
     IONetworkMedium *mediumTable[1];
     IONetworkStats *fpNetStats;
+#ifndef AIRPORT
     itlwm_interface *fNetIf;
+#else
+    IONetworkInterface *fNetIf;
+#endif
     void *lastSleepChan;
     IOWorkLoop *fWatchdogWorkLoop;
+	interop_scan_result* fInteropScanResult;
     
     IOLock *fwLoadLock;
     semaphore_t outputThreadSignal;
@@ -407,6 +436,10 @@ public:
     UInt8 pmPCICapPtr;
     bool magicPacketEnabled;
     bool magicPacketSupported;
+
+	bool protect_des_ess;
+
+	IOEthernetController *fController;
 };
 
 struct ResourceCallbackContext
@@ -414,3 +447,5 @@ struct ResourceCallbackContext
     itlwm* context;
     OSData* resource;
 };
+
+#endif

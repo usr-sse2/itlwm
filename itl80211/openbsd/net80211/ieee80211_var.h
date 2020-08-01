@@ -429,6 +429,7 @@ struct ieee80211com {
 	u_char			ic_chan_avail[howmany(IEEE80211_CHAN_MAX,NBBY)];
 	u_char			ic_chan_active[howmany(IEEE80211_CHAN_MAX, NBBY)];
 	u_char			ic_chan_scan[howmany(IEEE80211_CHAN_MAX,NBBY)];
+	u_char			ic_chan_scan_target[howmany(IEEE80211_CHAN_MAX,NBBY)];
 	struct mbuf_queue	ic_mgtq;
 	struct mbuf_queue	ic_pwrsaveq;
 	u_int8_t		ic_scan_count;	/* count scans */
@@ -595,6 +596,7 @@ struct ieee80211_ess {
 
 /* ic_xflags */
 #define	IEEE80211_F_TX_MGMT_ONLY 0x00000001	/* leave data frames on ifq */
+#define	IEEE80211_F_EXTERNAL_MGMT 0x80000000	/* don't scan or join when not requested */
 
 /* ic_caps */
 #define	IEEE80211_C_WEP		0x00000001	/* CAPABILITY: WEP available */
@@ -658,6 +660,7 @@ void	ieee80211_set_ess(struct ieee80211com *, struct ieee80211_ess *,
 void    ieee80211_deselect_ess(struct ieee80211com *);
 struct ieee80211_ess *ieee80211_get_ess(struct ieee80211com *, const char *, int);
 void ieee80211_begin_cache_bgscan(struct ifnet *);
+void ieee80211_switch_ess(struct ieee80211com *ic);
 
 extern	int ieee80211_cache_size;
 

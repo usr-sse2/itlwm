@@ -394,8 +394,11 @@ ieee80211_inputm(struct ifnet *ifp, mbuf_t m, struct ieee80211_node *ni,
         
         if (ic->ic_state == IEEE80211_S_RUN && ic->ic_bgscan_start) {
             /* Cancel or start background scan based on RSSI. */
-            if ((*ic->ic_node_checkrssi)(ic, ni))
+			if ((*ic->ic_node_checkrssi)(ic, ni)) {
+#ifndef AIRPORT
                 timeout_del(&ic->ic_bgscan_timeout);
+#endif
+			}
             else if (!timeout_pending(&ic->ic_bgscan_timeout) &&
                      (ic->ic_flags & IEEE80211_F_BGSCAN) == 0 &&
                      (ic->ic_flags & IEEE80211_F_DESBSSID) == 0)

@@ -34,6 +34,9 @@ static IOReturn _if_input(OSObject *target, void *arg0, void *arg1, void *arg2, 
         if (ifq->netStat != NULL) {
             ifq->netStat->inputPackets++;
         }
+		else {
+			XYLog("netstat is NULL\n");
+		}
     }
     if (!isEmpty) {
         ifq->iface->flushInputQueue();
@@ -43,6 +46,9 @@ static IOReturn _if_input(OSObject *target, void *arg0, void *arg1, void *arg2, 
 
 int if_input(struct ifnet *ifq, struct mbuf_list *ml)
 {
+	if (ml_empty(ml))
+		return kIOReturnSuccess;
+
     return _fCommandGate->runAction((IOCommandGate::Action)_if_input, ifq, ml);
 }
 

@@ -203,6 +203,7 @@ ieee80211_channel_init(struct ifnet *ifp)
                 ic->ic_modecaps |= 1<<IEEE80211_MODE_11AC;
         }
     }
+	memcpy(ic->ic_chan_scan_target, ic->ic_chan_avail, sizeof(ic->ic_chan_avail));
     /* validate ic->ic_curmode */
     if ((ic->ic_modecaps & (1<<ic->ic_curmode)) == 0)
         ic->ic_curmode = IEEE80211_MODE_AUTO;

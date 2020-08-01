@@ -58,6 +58,13 @@ MSEC_TO_NSEC(uint64_t milliseconds)
     return milliseconds * 1000000ULL;
 }
 
+static __inline uint64_t
+NSEC_TO_MSEC(uint64_t nanoseconds)
+{
+    return nanoseconds / 1000000ULL;
+}
+
+
 static inline int
 flsl(long mask)
 {
