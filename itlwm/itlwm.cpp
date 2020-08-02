@@ -24,7 +24,7 @@
 #include <net80211/ieee80211_ioctl.h>
 
 #ifdef AIRPORT
-#define super IOService
+#define super Black80211Device
 #else
 #define super IOEthernetController
 #endif
@@ -399,7 +399,6 @@ void itlwm::watchdogAction(IOTimerEventSource *timer)
     watchdogTimer->setTimeoutMS(1000);
 }
 
-#ifndef AIRPORT
 const OSString * itlwm::newVendorString() const
 {
     return OSString::withCString("Apple");
@@ -409,7 +408,6 @@ const OSString * itlwm::newModelString() const
 {
     return OSString::withCString("Intel Wireless Card");
 }
-#endif
 
 bool itlwm::initPCIPowerManagment(IOPCIDevice *provider)
 {

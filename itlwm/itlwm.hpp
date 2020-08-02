@@ -50,7 +50,7 @@ enum
 #endif
 
 #ifdef AIRPORT
-class itlwm : public IOService {
+class itlwm : public Black80211Device {
 #else
 class itlwm : public IOEthernetController {
 #endif
@@ -82,10 +82,14 @@ public:
     static IOReturn _iwm_start_task(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3);
     virtual bool createWorkLoop() ETHERNET_OVERRIDE;
     virtual IOWorkLoop* getWorkLoop() const override;
-    virtual IOCommandGate* getCommandGate() const;
 #ifndef AIRPORT
+    virtual IOCommandGate* getCommandGate() const;
+#else
+	virtual IOCommandGate* getCommandGate() const override;
+#endif
     virtual const OSString * newVendorString() const override;
     virtual const OSString * newModelString() const override;
+#ifndef AIRPORT
     virtual IOReturn getMaxPacketSize(UInt32* maxSize) const override;
     virtual IONetworkInterface * createInterface() override;
 #endif
@@ -440,6 +444,35 @@ public:
 	bool protect_des_ess;
 
 	IOEthernetController *fController;
+	
+#ifdef AIRPORT
+	virtual IOReturn getMACAddress(IOEthernetAddress* address) override;
+	virtual void setController(IOEthernetController* io80211controller) override;
+	virtual void setInterface(IOEthernetInterface* interface) override;
+	virtual void enable() override;
+	virtual void disable() override;
+	virtual ScanResult* getScanResult() override;
+	virtual void associate() override;
+	virtual void disassociate() override;
+	virtual IOReturn bgscan(uint8_t* channels, uint32_t length, const char* ssid, uint32_t ssid_len) override;
+	virtual void getESSID(uint8_t essid[32], uint32_t* len) override;
+	virtual void getBSSID(u_int8_t * bssid) override;
+	virtual int getChannel() override;
+	virtual int getRate() override;
+	virtual int getMCS() override;
+	virtual int getRSSI() override;
+	virtual int getNoise() override;
+	virtual int getState() override;
+	virtual bool isScanning() override;
+	virtual void getRSNIE(uint16_t &ie_len, uint8_t ie_buf[257]) override;
+	virtual void getSupportedChannels(uint32_t &channels_count, struct channel_desc channel_desc[APPLE80211_MAX_CHANNELS]) override;
+	virtual void setSSID(const char* ssid) override;
+	virtual void setOpen() override;
+	virtual void setWEPKey(const u_int8_t *key, size_t key_len, int key_index) override;
+	virtual void setEAP() override;
+	virtual void setWPAKey(const u_int8_t *key, size_t key_len) override;
+	virtual UInt32 outputPacket(mbuf_t m, void *param) override;
+#endif
 };
 
 struct ResourceCallbackContext
