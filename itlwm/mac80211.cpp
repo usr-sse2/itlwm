@@ -2222,16 +2222,9 @@ iwm_endscan(struct iwm_softc *sc)
     struct ieee80211_node *ni, *nextbs;
     struct ieee80211com *ic = &sc->sc_ic;
 #ifdef AIRPORT
-	if (fInteropScanResult) {
-		for (int i = 0; i < fInteropScanResult->count; i++)
-			if (fInteropScanResult->networks[i].ni_rsnie != nullptr)
-				IOFree(fInteropScanResult->networks[i].ni_rsnie, 2 + fInteropScanResult->networks[i].ni_rsnie[1]);
-		if (fInteropScanResult->networks && fInteropScanResult->count)
-			IOFree(fInteropScanResult->networks, fInteropScanResult->count * sizeof(interop_scan_result_network));
-		IOFree(fInteropScanResult, sizeof(interop_scan_result));
-	}
+	OSSafeReleaseNULL(fInteropScanResult);
 
-	interop_scan_result *scan_result = (interop_scan_result*)IOMalloc(sizeof(interop_scan_result));
+	ScanResult *scan_result = ScanResult::scanResult();
 	scan_result->count = 0;
 
 	ni = RB_MIN(ieee80211_tree, &ic->ic_tree);
@@ -2240,35 +2233,27 @@ iwm_endscan(struct iwm_softc *sc)
 		scan_result->count++;
     }
 
-	scan_result->networks = (interop_scan_result_network*)IOMalloc(sizeof(interop_scan_result_network) * scan_result->count);
+	scan_result->networks = (NetworkInformation*)IOMalloc(sizeof(NetworkInformation) * scan_result->count);
 
 	int i = 0;
     ni = RB_MIN(ieee80211_tree, &ic->ic_tree);
     for (; ni != NULL; ni = nextbs) {
         nextbs = RB_NEXT(ieee80211_tree, &ic->ic_tree, ni);
-		interop_scan_result_network *net = &scan_result->networks[i];
+		NetworkInformation *net = &scan_result->networks[i];
         XYLog("%s scan_result ssid=%s\n", __FUNCTION__, ni->ni_essid);
-		memcpy(net->ni_essid, ni->ni_essid, IEEE80211_NWID_LEN);
-		memcpy(net->ni_bssid, ni->ni_bssid, IEEE80211_ADDR_LEN);
-		net->ni_rsnciphers = ni->ni_rsnciphers;
-		net->ni_rsncipher = ni->ni_rsncipher;
-		net->ni_rsngroupmgmtcipher = ni->ni_rsngroupmgmtcipher;
-		net->ni_rsngroupcipher = ni->ni_rsngroupcipher;
-		net->ni_rssi = ni->ni_rssi;
-		net->ni_capinfo = ni->ni_capinfo;
-		net->ni_intval = ni->ni_intval;
-		net->ni_rsnakms = ni->ni_rsnakms;
-		net->ni_supported_rsnakms = ni->ni_supported_rsnakms;
-		net->ni_rsnprotos = ni->ni_rsnprotos;
-		net->ni_supported_rsnprotos = ni->ni_supported_rsnprotos;
-		net->ni_rstamp = ni->ni_rstamp;
-		net->ni_channel = ieee80211_chan2ieee(ic, ni->ni_chan);
+		memcpy(net->essid, ni->ni_essid, IEEE80211_NWID_LEN);
+		memcpy(net->bssid, ni->ni_bssid, IEEE80211_ADDR_LEN);
+		net->rssi = ni->ni_rssi;
+		net->capabilities = ni->ni_capinfo;
+		net->beacon_interval = ni->ni_intval;
+		net->timestamp = ni->ni_rstamp;
+		net->channel = ieee80211_chan2ieee(ic, ni->ni_chan);
 		if (ni->ni_rsnie == nullptr) {
-			net->ni_rsnie = nullptr;
+			net->rsn_ie = nullptr;
 		}
 		else {
-			net->ni_rsnie = (u_int8_t*)IOMalloc(2 + ni->ni_rsnie[1]);
-			memcpy(net->ni_rsnie, ni->ni_rsnie, 2 + ni->ni_rsnie[1]);
+			net->rsn_ie = (u_int8_t*)IOMalloc(2 + ni->ni_rsnie[1]);
+			memcpy(net->rsn_ie, ni->ni_rsnie, 2 + ni->ni_rsnie[1]);
 		}
 		i++;
     }

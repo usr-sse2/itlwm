@@ -423,7 +423,7 @@ public:
 #endif
     void *lastSleepChan;
     IOWorkLoop *fWatchdogWorkLoop;
-	interop_scan_result* fInteropScanResult;
+	ScanResult* fInteropScanResult;
     
     IOLock *fwLoadLock;
     semaphore_t outputThreadSignal;
