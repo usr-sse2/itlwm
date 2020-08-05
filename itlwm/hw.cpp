@@ -614,11 +614,12 @@ iwm_stop_device(struct iwm_softc *sc)
 
 #ifdef AIRPORT
 	/* We won't complete scanning, so report empty result to prevent client from hanging */
-	OSSafeReleaseNULL(fInteropScanResult);
-
-	fInteropScanResult = ScanResult::scanResult();
-
-	messageClients(iokit_vendor_specific_msg(IWM_SCAN_COMPLETE_NOTIFICATION));
+	// First time don't report - we're starting
+	if (fInteropScanResult != nullptr) {
+		fInteropScanResult->release();
+		fInteropScanResult = ScanResult::scanResult();
+		messageClients(iokit_vendor_specific_msg(IWM_SCAN_COMPLETE_NOTIFICATION));
+	}
 #endif
     
     iwm_disable_interrupts(sc);
