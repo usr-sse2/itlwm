@@ -406,7 +406,7 @@ const OSString * itlwm::newVendorString() const
 
 const OSString * itlwm::newModelString() const
 {
-    return OSString::withCString("Intel Wireless Card");
+	return OSString::withCString(com.sc_fwname);
 }
 
 bool itlwm::initPCIPowerManagment(IOPCIDevice *provider)

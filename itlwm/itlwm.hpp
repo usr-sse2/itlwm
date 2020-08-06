@@ -472,6 +472,8 @@ public:
 	virtual void setEAP() override;
 	virtual void setWPAKey(const u_int8_t *key, size_t key_len) override;
 	virtual UInt32 outputPacket(mbuf_t m, void *param) override;
+	virtual void getFirmwareVersion(char version[256], uint16_t &version_len) override;
+	virtual uint32_t getPHYMode() override;
 #endif
 };
 

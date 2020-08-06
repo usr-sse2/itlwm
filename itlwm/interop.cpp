@@ -423,6 +423,42 @@ IOReturn itlwm::getMACAddress(IOEthernetAddress* address) {
     }
 }
 
+void itlwm::getFirmwareVersion(char version[256], uint16_t &version_len) {
+	strncpy(version, com.sc_fwver, MIN(256, sizeof(com.sc_fwver)));
+	version_len = strnlen(com.sc_fwver, sizeof(com.sc_fwver));
+}
+
+enum apple80211_phymode {
+    APPLE80211_MODE_UNKNOWN            = 0,
+    APPLE80211_MODE_AUTO               = 0x1,        // autoselect
+    APPLE80211_MODE_11A                = 0x2,        // 5GHz, OFDM
+    APPLE80211_MODE_11B                = 0x4,        // 2GHz, CCK
+    APPLE80211_MODE_11G                = 0x8,        // 2GHz, OFDM
+    APPLE80211_MODE_11N                = 0x10,        // 2GHz/5GHz, OFDM
+    APPLE80211_MODE_TURBO_A            = 0x20,        // 5GHz, OFDM, 2x clock
+    APPLE80211_MODE_TURBO_G            = 0x40,        // 2GHz, OFDM, 2x clock
+	APPLE80211_MODE_11AC 			   = 0x80,
+};
+
+uint32_t itlwm::getPHYMode() {
+	switch (com.sc_ic.ic_curmode) {
+		case IEEE80211_MODE_11A:
+			return APPLE80211_MODE_11A;
+		case IEEE80211_MODE_11B:
+			return APPLE80211_MODE_11B;
+		case IEEE80211_MODE_11G:
+			return APPLE80211_MODE_11G;
+		case IEEE80211_MODE_11N:
+			return APPLE80211_MODE_11N;
+		case IEEE80211_MODE_11AC:
+			return APPLE80211_MODE_11AC;
+		case IEEE80211_MODE_AUTO:
+			return APPLE80211_MODE_AUTO;
+		default:
+			return APPLE80211_MODE_UNKNOWN;
+	}
+}
+
 UInt32 itlwm::outputPacket(mbuf_t m, void *param)
 {
 	//    XYLog("%s\n", __FUNCTION__);
