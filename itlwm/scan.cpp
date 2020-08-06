@@ -202,7 +202,7 @@ iwm_umac_scan_fill_channels(struct iwm_softc *sc,
             continue;
         
         chan->channel_num = ieee80211_mhz2ieee(c->ic_freq, 0);
-		if (bgscan && !isset(ic->ic_chan_scan_target, chan->channel_num))
+		if (bgscan && !ic->ic_bgscan_all_channels && !isset(ic->ic_chan_scan_target, chan->channel_num))
 			continue;
         chan->iter_count = 1;
         chan->iter_interval = htole16(0);

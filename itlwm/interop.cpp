@@ -269,9 +269,10 @@ IOReturn itlwm::bgscan(uint8_t* channels, uint32_t length, const char* ssid, uin
 	if (ic->ic_state == IEEE80211_S_RUN) {
 		if (length == 0) {
 			// Scan all channels
-			memset(ic->ic_chan_scan_target, 0xff, sizeof(ic->ic_chan_scan_target));
+			ic->ic_bgscan_all_channels = true;
 		}
 		else {
+			ic->ic_bgscan_all_channels = false;
 			bzero(ic->ic_chan_scan_target, sizeof(ic->ic_chan_scan_target));
 			for (int i = 0; i < length; i++)
 				setbit(ic->ic_chan_scan_target, channels[i]);
@@ -459,8 +460,53 @@ uint32_t itlwm::getPHYMode() {
 	}
 }
 
+uint32_t itlwm::getSupportedPHYModes() {
+	uint32_t modes = 0;
+	if (com.sc_ic.ic_modecaps & IEEE80211_MODE_11A)
+		modes |= APPLE80211_MODE_11A;
+	if (com.sc_ic.ic_modecaps & IEEE80211_MODE_11B)
+		modes |= APPLE80211_MODE_11B;
+	if (com.sc_ic.ic_modecaps & IEEE80211_MODE_11G)
+		modes |= APPLE80211_MODE_11G;
+	if (com.sc_ic.ic_modecaps & IEEE80211_MODE_11N)
+		modes |= APPLE80211_MODE_11N;
+	if (com.sc_ic.ic_modecaps & IEEE80211_MODE_11AC)
+		modes |= APPLE80211_MODE_11AC;
+	if (com.sc_ic.ic_modecaps & IEEE80211_MODE_AUTO)
+		modes |= APPLE80211_MODE_AUTO;
+	return modes;
+}
+
 void itlwm::getCountryCode(char countryCode[3]) {
 	memcpy(countryCode, com.sc_fw_mcc, 3);
+}
+
+enum apple80211_opmode {
+    APPLE80211_M_NONE        = 0x0,
+    APPLE80211_M_STA        = 0x1,        // infrastructure station
+    APPLE80211_M_IBSS        = 0x2,        // IBSS (adhoc) station
+    APPLE80211_M_AHDEMO        = 0x4,        // Old lucent compatible adhoc demo
+    APPLE80211_M_HOSTAP        = 0x8,        // Software Access Point
+    APPLE80211_M_MONITOR    = 0x10        // Monitor mode
+};
+
+uint32_t itlwm::getOpMode() {
+	switch (com.sc_ic.ic_opmode) {
+		case IEEE80211_M_STA:
+			return APPLE80211_M_STA;
+#ifndef IEEE80211_STA_ONLY
+		case IEEE80211_M_IBSS:
+			return APPLE80211_M_IBSS;
+		case IEEE80211_M_AHDEMO:
+			return APPLE80211_M_AHDEMO;
+		case IEEE80211_M_HOSTAP:
+			return APPLE80211_M_HOSTAP;
+#endif
+		case IEEE80211_M_MONITOR:
+			return APPLE80211_M_MONITOR;
+		default:
+			return APPLE80211_M_NONE;			
+	}
 }
 
 

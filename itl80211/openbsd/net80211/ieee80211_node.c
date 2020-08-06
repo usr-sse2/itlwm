@@ -1420,7 +1420,7 @@ ieee80211_end_scan(struct ifnet *ifp)
     }
 #endif
 #ifdef AIRPORT
-	if (bgscan || ic->ic_xflags & IEEE80211_F_EXTERNAL_MGMT) { // Don't switch networks if not asked to!
+	if (bgscan && !ic->ic_bgscan_all_channels) { // Don't switch networks after partial scan!
 		ic->ic_bgscan_fail = 0;
 		ic->ic_flags &= ~IEEE80211_F_BGSCAN;
 		return;

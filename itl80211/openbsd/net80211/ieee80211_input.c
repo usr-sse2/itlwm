@@ -401,9 +401,11 @@ ieee80211_inputm(struct ifnet *ifp, mbuf_t m, struct ieee80211_node *ni,
 			}
             else if (!timeout_pending(&ic->ic_bgscan_timeout) &&
                      (ic->ic_flags & IEEE80211_F_BGSCAN) == 0 &&
-                     (ic->ic_flags & IEEE80211_F_DESBSSID) == 0)
+                     (ic->ic_flags & IEEE80211_F_DESBSSID) == 0) {
                 timeout_add_msec(&ic->ic_bgscan_timeout,
                                  500 * (ic->ic_bgscan_fail + 1));
+				ic->ic_bgscan_all_channels = true;
+			}
         }
     }
     

@@ -430,6 +430,7 @@ struct ieee80211com {
 	u_char			ic_chan_active[howmany(IEEE80211_CHAN_MAX, NBBY)];
 	u_char			ic_chan_scan[howmany(IEEE80211_CHAN_MAX,NBBY)];
 	u_char			ic_chan_scan_target[howmany(IEEE80211_CHAN_MAX,NBBY)];
+	bool			ic_bgscan_all_channels;
 	struct mbuf_queue	ic_mgtq;
 	struct mbuf_queue	ic_pwrsaveq;
 	u_int8_t		ic_scan_count;	/* count scans */
