@@ -227,7 +227,8 @@ void itlwm::getRSNIE(uint16_t &ie_len, uint8_t ie_buf[257]) {
 }
 
 int itlwm::getRSSI() {
-	return iwm_get_signal_strength(&com, &com.sc_last_phy_info);
+    ieee80211_node *bss = com.sc_ic.ic_bss;
+    return -(bss->ni_rssi);
 }
 
 int itlwm::getNoise() {
