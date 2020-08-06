@@ -474,6 +474,7 @@ public:
 	virtual UInt32 outputPacket(mbuf_t m, void *param) override;
 	virtual void getFirmwareVersion(char version[256], uint16_t &version_len) override;
 	virtual uint32_t getPHYMode() override;
+	virtual void getCountryCode(char countryCode[3]) override;
 #endif
 };
 

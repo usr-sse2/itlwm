@@ -459,6 +459,11 @@ uint32_t itlwm::getPHYMode() {
 	}
 }
 
+void itlwm::getCountryCode(char countryCode[3]) {
+	memcpy(countryCode, com.sc_fw_mcc, 3);
+}
+
+
 UInt32 itlwm::outputPacket(mbuf_t m, void *param)
 {
 	//    XYLog("%s\n", __FUNCTION__);

@@ -79,6 +79,7 @@ public:
     virtual const OSString * newModelString() const = 0;
 	virtual void getFirmwareVersion(char version[256], uint16_t &version_len);
 	virtual uint32_t getPHYMode();
+	virtual void getCountryCode(char countryCode[3]);
 };
 
 #endif /* interop_hpp */
