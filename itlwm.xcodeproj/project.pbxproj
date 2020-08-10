@@ -247,19 +247,19 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		35AB79B024E1337B00CE3AF7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 024A07A323FCBC3C009FBA6C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F8EE4D1B24178BF0002FA666;
+			remoteInfo = fw_gen;
+		};
 		F8B8F1632493C54C0059FAA8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 024A07A323FCBC3C009FBA6C /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = F8B8F15E2493C1E90059FAA8;
 			remoteInfo = fw_genx;
-		};
-		F8CC2BCD245080C3008EA16B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 024A07A323FCBC3C009FBA6C /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = F8EE4D1B24178BF0002FA666;
-			remoteInfo = fwgen;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -332,6 +332,7 @@
 		024A08D523FCF4D7009FBA6C /* scan.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = scan.cpp; sourceTree = "<group>"; };
 		35360A2324D2B253005E266C /* interop.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = interop.cpp; sourceTree = "<group>"; };
 		35360A2424D2B253005E266C /* interop.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = interop.hpp; sourceTree = "<group>"; };
+		35AB79B324E133A300CE3AF7 /* Kernel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kernel.framework; path = System/Library/Frameworks/Kernel.framework; sourceTree = SDKROOT; };
 		5076FA7F24CC71E40011B2BB /* FwBinary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FwBinary.cpp; sourceTree = "<group>"; };
 		F88D2B3B2414E64000BBE700 /* sha1-pbkdf2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sha1-pbkdf2.c"; sourceTree = "<group>"; };
 		F8A33572244AED060039DA12 /* IOTaskQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IOTaskQueue.cpp; sourceTree = "<group>"; };
@@ -453,6 +454,7 @@
 				F8D6CD4F2442E0D100D2A454 /* itl80211 */,
 				F8D6CD612442E8F200D2A454 /* itlwmx */,
 				024A07AD23FCBC3C009FBA6C /* Products */,
+				35AB79B224E133A300CE3AF7 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -575,6 +577,14 @@
 				F8C4BF8B2420FAED007F410E /* iwm-9260-34 */,
 			);
 			path = firmware;
+			sourceTree = "<group>";
+		};
+		35AB79B224E133A300CE3AF7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				35AB79B324E133A300CE3AF7 /* Kernel.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		F8B8F1622493C28B0059FAA8 /* include */ = {
@@ -893,7 +903,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				F8CC2BCE245080C3008EA16B /* PBXTargetDependency */,
+				35AB79B124E1337B00CE3AF7 /* PBXTargetDependency */,
 			);
 			name = itlwm;
 			productName = itlwm;
@@ -1115,15 +1125,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		35AB79B124E1337B00CE3AF7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F8EE4D1B24178BF0002FA666 /* fw_gen */;
+			targetProxy = 35AB79B024E1337B00CE3AF7 /* PBXContainerItemProxy */;
+		};
 		F8B8F1642493C54C0059FAA8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F8B8F15E2493C1E90059FAA8 /* fw_genx */;
 			targetProxy = F8B8F1632493C54C0059FAA8 /* PBXContainerItemProxy */;
-		};
-		F8CC2BCE245080C3008EA16B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = F8EE4D1B24178BF0002FA666 /* fw_gen */;
-			targetProxy = F8CC2BCD245080C3008EA16B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
