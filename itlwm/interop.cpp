@@ -66,13 +66,30 @@ extern IOCommandGate *_fCommandGate;
 void itlwm::setController(IOEthernetController* io80211controller) {
 	struct ieee80211com *ic = &com.sc_ic;
 	fController = io80211controller;
+	
+	_fWorkloop = fController->getWorkLoop();
+	if (!getWorkLoop()) {
+		XYLog("No workloop\n");
+		releaseAll();
+		return;
+	}
 
+	_fCommandGate = IOCommandGate::commandGate(this, (IOCommandGate::Action)tsleepHandler);
+    if (_fCommandGate == 0) {
+        XYLog("No command gate!!\n");
+        releaseAll();
+        return;
+    }
+    _fWorkloop->addEventSource(_fCommandGate);
+
+	pci.workloop = _fWorkloop;
+    pci.pa_tag = pciNub;
+	
     if (!iwm_attach(&com, &pci)) {
         releaseAll();
         return;
     }
 
-	//com.sc_ic.ic_xflags |= IEEE80211_F_EXTERNAL_MGMT;
 	ic->ic_des_esslen = 0;
 	ic->ic_flags |= IEEE80211_F_AUTO_JOIN; // Makes it not join anything when ic_des_esslen is 0
 

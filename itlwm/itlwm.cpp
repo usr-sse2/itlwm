@@ -327,6 +327,13 @@ bool itlwm::start(IOService *provider)
     if (initPCIPowerManagment(pciNub) == false) {
         return false;
     }
+	
+#ifdef AIRPORT	
+	self = this;
+	if (net_init_add(register_self) == EALREADY) 
+		registerService();
+    return true;
+#else	
 	if (!createWorkLoop()) {
 		XYLog("No workloop\n");
 		releaseAll();
@@ -339,17 +346,14 @@ bool itlwm::start(IOService *provider)
         return false;
     }
     _fWorkloop->addEventSource(_fCommandGate);
-#ifndef AIRPORT
     const IONetworkMedium *primaryMedium;
     if (!createMediumTables(&primaryMedium) ||
         !setCurrentMedium(primaryMedium) || !setSelectedMedium(primaryMedium)) {
         releaseAll();
         return false;
     }
-#endif
     pci.workloop = _fWorkloop;
     pci.pa_tag = pciNub;
-#ifndef AIRPORT
     if (!iwm_attach(&com, &pci)) {
         releaseAll();
         return false;
@@ -397,12 +401,8 @@ bool itlwm::start(IOService *provider)
         }
         iterator->release();
     }
+	return true;
 #endif
-	
-	self = this;
-	if (net_init_add(register_self) == EALREADY) 
-		registerService();
-    return true;
 }
 
 void itlwm::watchdogAction(IOTimerEventSource *timer)
