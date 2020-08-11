@@ -15,6 +15,9 @@
 #include "types.h"
 #include "kernel.h"
 
+extern "C" {
+#include <net/init.h>
+}
 #include <IOKit/IOInterruptController.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/network/IONetworkMedium.h>
@@ -298,6 +301,12 @@ void itlwm::associateSSID(const char *ssid, const char *pwd)
     iwm_add_task(&com, systq, &com.init_task);
 }
 
+static itlwm* self;
+static void register_self()
+{
+	self->registerService();
+}
+
 bool itlwm::start(IOService *provider)
 {
     if (!super::start(provider)) {
@@ -318,6 +327,13 @@ bool itlwm::start(IOService *provider)
     if (initPCIPowerManagment(pciNub) == false) {
         return false;
     }
+	
+#ifdef AIRPORT	
+	self = this;
+	if (net_init_add(register_self) == EALREADY) 
+		registerService();
+    return true;
+#else	
 	if (!createWorkLoop()) {
 		XYLog("No workloop\n");
 		releaseAll();
@@ -330,17 +346,14 @@ bool itlwm::start(IOService *provider)
         return false;
     }
     _fWorkloop->addEventSource(_fCommandGate);
-#ifndef AIRPORT
     const IONetworkMedium *primaryMedium;
     if (!createMediumTables(&primaryMedium) ||
         !setCurrentMedium(primaryMedium) || !setSelectedMedium(primaryMedium)) {
         releaseAll();
         return false;
     }
-#endif
     pci.workloop = _fWorkloop;
     pci.pa_tag = pciNub;
-#ifndef AIRPORT
     if (!iwm_attach(&com, &pci)) {
         releaseAll();
         return false;
@@ -388,9 +401,8 @@ bool itlwm::start(IOService *provider)
         }
         iterator->release();
     }
+	return true;
 #endif
-    registerService();
-    return true;
 }
 
 void itlwm::watchdogAction(IOTimerEventSource *timer)
