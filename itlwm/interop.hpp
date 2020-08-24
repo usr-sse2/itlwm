@@ -19,6 +19,7 @@ struct NetworkInformation {
 	u_int16_t		beacon_interval;
 	u_int32_t		timestamp;
 	u_int8_t		*rsn_ie;
+	u_int32_t		ie_len;
 	int 			channel;
 };
 
@@ -54,7 +55,6 @@ public:
 	virtual void enable() = 0;
 	virtual void disable() = 0;
 	virtual ScanResult* getScanResult() = 0;
-	virtual void associate() = 0;
 	virtual void disassociate() = 0;
 	virtual IOReturn bgscan(uint8_t* channels, uint32_t length, const char* ssid, uint32_t ssid_len) = 0;
 	virtual void getESSID(uint8_t essid[32], uint32_t* len) = 0;
@@ -68,11 +68,6 @@ public:
 	virtual bool isScanning() = 0;
 	virtual void getRSNIE(uint16_t &ie_len, uint8_t ie_buf[257]) = 0;
 	virtual void getSupportedChannels(uint32_t &channels_count, struct channel_desc channel_desc[APPLE80211_MAX_CHANNELS]) = 0;
-	virtual void setSSID(const char* ssid) = 0;
-	virtual void setOpen() = 0;
-	virtual void setWEPKey(const u_int8_t *key, size_t key_len, int key_index) = 0;
-	virtual void setEAP() = 0;
-	virtual void setWPAKey(const u_int8_t *key, size_t key_len) = 0;
 	virtual UInt32 outputPacket(mbuf_t m, void *param) = 0;
 	virtual IOCommandGate *getCommandGate() const = 0;
 	virtual const OSString * newVendorString() const = 0;
@@ -82,6 +77,12 @@ public:
 	virtual uint32_t getSupportedPHYModes() = 0;
 	virtual uint32_t getOpMode() = 0;
 	virtual void getCountryCode(char countryCode[3]) = 0;
+	virtual void getAP_IE_LIST(uint32_t &ie_list_len, uint8_t *ie_buf) = 0;
+	virtual void setPTK(const u_int8_t *key, size_t key_len) = 0;
+	virtual void setGTK(const u_int8_t *key, size_t key_len, u_int8_t kid, u_int8_t *rsc) = 0;
+	virtual void setPMKSA(const u_int8_t *key, size_t key_len) = 0;
+	virtual void associate(uint8_t *ssid, uint32_t ssid_len, const struct ether_addr& bssid, uint32_t authtype_lower, uint32_t authtype_upper, uint8_t *key, uint32_t key_len, int key_index) = 0;
+	virtual void setRSN_IE(const u_int8_t *ie) = 0;
 };
 
 #endif /* interop_hpp */

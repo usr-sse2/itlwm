@@ -1242,6 +1242,10 @@
 		024A07B723FCBC3C009FBA6C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUILD_VARIANTS = (
+					normal,
+					kasan,
+				);
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1266,6 +1270,7 @@
 				MODULE_NAME = com.zxystd.itlwm;
 				MODULE_VERSION = "$(MARKETING_VERSION)";
 				OTHER_CFLAGS = "-fstack-protector-all";
+				OTHER_CFLAGS_kasan = "$(KASAN_DEFAULT_CFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.zxystd.itlwm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYSTEM_HEADER_SEARCH_PATHS = "itl80211/openbsd itl80211";
@@ -1276,6 +1281,10 @@
 		024A07B823FCBC3C009FBA6C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUILD_VARIANTS = (
+					normal,
+					kasan,
+				);
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
 				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1300,6 +1309,7 @@
 				MODULE_NAME = com.zxystd.itlwm;
 				MODULE_VERSION = "$(MARKETING_VERSION)";
 				OTHER_CFLAGS = "-fstack-protector-all";
+				OTHER_CFLAGS_kasan = "$(KASAN_DEFAULT_CFLAGS)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.zxystd.itlwm;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYSTEM_HEADER_SEARCH_PATHS = "itl80211/openbsd itl80211";

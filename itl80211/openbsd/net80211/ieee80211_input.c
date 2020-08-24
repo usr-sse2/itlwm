@@ -98,6 +98,9 @@ enum    ieee80211_akm ieee80211_parse_rsn_akm(const u_int8_t[]);
 int    ieee80211_parse_rsn_body(struct ieee80211com *, const u_int8_t *,
                                 u_int, struct ieee80211_rsnparams *);
 int    ieee80211_save_ie(const u_int8_t *, u_int8_t **);
+#ifdef AIRPORT
+int    ieee80211_save_ie_list(const u_int8_t *frm, size_t len, u_int8_t **ie, u_int32_t *len_field);
+#endif
 void    ieee80211_recv_probe_resp(struct ieee80211com *, mbuf_t,
                                   struct ieee80211_node *, struct ieee80211_rxinfo *, int);
 #ifndef IEEE80211_STA_ONLY
@@ -1063,7 +1066,11 @@ ieee80211_enqueue_data(struct ieee80211com *ic, mbuf_t m,
             if (ifp->if_bpf && m1 == NULL)
                 bpf_mtap(ifp->if_bpf, m, BPF_DIRECTION_IN);
 #endif
+#ifndef AIRPORT
             ieee80211_eapol_key_input(ic, m, ni);
+#else
+			ml_enqueue(ml, m);
+#endif
         } else {
             ml_enqueue(ml, m);
         }
@@ -1477,6 +1484,28 @@ ieee80211_save_ie(const u_int8_t *frm, u_int8_t **ie)
     return 0;
 }
 
+#ifdef AIRPORT
+/*
+ * Create (or update) a copy of an IE list.
+ */
+int
+ieee80211_save_ie_list(const u_int8_t *frm, size_t len, u_int8_t **ie, u_int32_t *len_field)
+{
+    size_t olen = *len_field;
+    
+    if (*ie == NULL || olen != len) {
+        //if (*ie != NULL)
+        //    IOFree(*ie, olen);
+        *ie = (u_int8_t *)_MallocZero(len);
+        if (*ie == NULL)
+            return ENOMEM;
+    }
+    memcpy(*ie, frm, len);
+	*len_field = (u_int32_t)len;
+    return 0;
+}
+#endif
+
 /*
  * Parse an 802.11ac VHT operation IE.
  */
@@ -1632,6 +1661,7 @@ ieee80211_recv_probe_resp(struct ieee80211com *ic, mbuf_t m,
     const uint8_t *csa;
     const uint8_t *vhtcap;
     const uint8_t *vhtopmode;
+	const uint8_t *ie_list;
     u_int16_t capinfo, bintval;
     u_int8_t chan, bchan, erp, dtim_count, dtim_period;
     int is_new;
@@ -1677,6 +1707,9 @@ ieee80211_recv_probe_resp(struct ieee80211com *ic, mbuf_t m,
     chan = bchan;
     erp = 0;
     dtim_count = dtim_period = 0;
+#ifdef AIRPORT
+	ie_list = frm;
+#endif
     while (frm + 2 <= efrm) {
         if (frm + 2 + frm[1] > efrm) {
             ic->ic_stats.is_rx_elem_toosmall++;
@@ -1974,6 +2007,9 @@ ieee80211_recv_probe_resp(struct ieee80211com *ic, mbuf_t m,
             ni->ni_supported_rsnakms |= wpa.rsn_akms;
         }
         
+#ifdef AIRPORT
+		ieee80211_save_ie_list(ie_list, efrm - ie_list, &ni->ni_ie_list, &ni->ni_ie_list_len);
+#endif
         /*
          * If the AP advertises both WPA and RSN IEs (WPA1+WPA2),
          * we only use the highest protocol version we support.

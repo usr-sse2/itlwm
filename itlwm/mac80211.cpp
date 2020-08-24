@@ -557,6 +557,7 @@ iwm_rx_frame(struct iwm_softc *sc, mbuf_t m, int chanidx,
         ni->ni_pairwise_key.k_cipher == IEEE80211_CIPHER_CCMP) {
         if ((rx_pkt_status & IWM_RX_MPDU_RES_STATUS_SEC_ENC_MSK) !=
             IWM_RX_MPDU_RES_STATUS_SEC_CCM_ENC) {
+			XYLog("itlwm: hardware decryption failed 1, ni_flags: %x\n", ni->ni_flags);
             ic->ic_stats.is_ccmp_dec_errs++;
             ifp->netStat->inputErrors++;
             mbuf_freem(m);
@@ -568,12 +569,14 @@ iwm_rx_frame(struct iwm_softc *sc, mbuf_t m, int chanidx,
               IWM_RX_MPDU_RES_STATUS_MIC_OK)) !=
             (IWM_RX_MPDU_RES_STATUS_DEC_DONE |
              IWM_RX_MPDU_RES_STATUS_MIC_OK)) {
+			XYLog("itlwm: hardware decryption failed 2\n");
             ic->ic_stats.is_ccmp_dec_errs++;
             ifp->netStat->inputErrors++;
             mbuf_freem(m);
             return;
         }
         if (iwm_ccmp_decap(sc, m, ni) != 0) {
+			XYLog("itlwm: hardware decryption failed 3\n");
             ifp->netStat->inputErrors++;
             mbuf_freem(m);
             return;
@@ -2248,12 +2251,13 @@ iwm_endscan(struct iwm_softc *sc)
 		net->beacon_interval = ni->ni_intval;
 		net->timestamp = ni->ni_rstamp;
 		net->channel = ieee80211_chan2ieee(ic, ni->ni_chan);
-		if (ni->ni_rsnie == nullptr) {
+		net->ie_len = ni->ni_ie_list_len;
+		if (ni->ni_ie_list_len == 0) {
 			net->rsn_ie = nullptr;
 		}
 		else {
-			net->rsn_ie = (u_int8_t*)IOMalloc(2 + ni->ni_rsnie[1]);
-			memcpy(net->rsn_ie, ni->ni_rsnie, 2 + ni->ni_rsnie[1]);
+			net->rsn_ie = (u_int8_t*)IOMalloc(ni->ni_ie_list_len);
+			memcpy(net->rsn_ie, ni->ni_ie_list, net->ie_len);
 		}
 		i++;
     }
@@ -2667,12 +2671,13 @@ _iwm_start_task(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3
             ni = (struct ieee80211_node *)mbuf_pkthdr_rcvif(m);
             goto sendit;
         }
-        
+#ifndef AIRPORT
         if (ic->ic_state != IEEE80211_S_RUN ||
             (ic->ic_xflags & IEEE80211_F_TX_MGMT_ONLY)) {
             ifp->if_snd->lockFlush();
             break;
         }
+#endif
         
         m = ifp->if_snd->lockDequeue();
 //        XYLog("%s if_snd->lockDequeue\n", __FUNCTION__);

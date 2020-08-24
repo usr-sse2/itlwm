@@ -452,7 +452,6 @@ public:
 	virtual void enable() override;
 	virtual void disable() override;
 	virtual ScanResult* getScanResult() override;
-	virtual void associate() override;
 	virtual void disassociate() override;
 	virtual IOReturn bgscan(uint8_t* channels, uint32_t length, const char* ssid, uint32_t ssid_len) override;
 	virtual void getESSID(uint8_t essid[32], uint32_t* len) override;
@@ -466,17 +465,18 @@ public:
 	virtual bool isScanning() override;
 	virtual void getRSNIE(uint16_t &ie_len, uint8_t ie_buf[257]) override;
 	virtual void getSupportedChannels(uint32_t &channels_count, struct channel_desc channel_desc[APPLE80211_MAX_CHANNELS]) override;
-	virtual void setSSID(const char* ssid) override;
-	virtual void setOpen() override;
-	virtual void setWEPKey(const u_int8_t *key, size_t key_len, int key_index) override;
-	virtual void setEAP() override;
-	virtual void setWPAKey(const u_int8_t *key, size_t key_len) override;
 	virtual UInt32 outputPacket(mbuf_t m, void *param) override;
 	virtual void getFirmwareVersion(char version[256], uint16_t &version_len) override;
 	virtual uint32_t getPHYMode() override;
 	virtual uint32_t getSupportedPHYModes() override;
 	virtual uint32_t getOpMode() override;
 	virtual void getCountryCode(char countryCode[3]) override;
+	virtual void getAP_IE_LIST(uint32_t &ie_list_len, uint8_t *ie_buf) override;
+	virtual void setPTK(const u_int8_t *key, size_t key_len) override;
+	virtual void setGTK(const u_int8_t *key, size_t key_len, u_int8_t kid, u_int8_t *rsc) override;
+	virtual void setPMKSA(const u_int8_t *key, size_t key_len) override;
+	virtual void associate(uint8_t *ssid, uint32_t ssid_len, const struct ether_addr& bssid, uint32_t authtype_lower, uint32_t authtype_upper, uint8_t *key, uint32_t key_len, int key_index) override;
+	virtual void setRSN_IE(const u_int8_t *ie) override;
 #endif
 };
 

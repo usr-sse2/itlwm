@@ -324,6 +324,10 @@ struct ieee80211_node {
 	u_int64_t		ni_reqreplaycnt;
 	u_int8_t		ni_reqreplaycnt_ok;
 	u_int8_t		*ni_rsnie;
+#ifdef AIRPORT
+	u_int8_t		*ni_ie_list;
+	u_int32_t		ni_ie_list_len;
+#endif
 	struct ieee80211_key	ni_pairwise_key;
 	struct ieee80211_ptk	ni_ptk;
 	u_int8_t		ni_key_count;

@@ -5,6 +5,8 @@
 #
 #  Created by qcwap on 2020/3/10.
 #  Copyright © 2020 钟先耀. All rights reserved.
+exit 0
+
 target_file="${PROJECT_DIR}/include/FwBinary.cpp"
 while [ $# -gt 0 ];
 do

@@ -39,7 +39,8 @@ void ScanResult::free() {
 	for (int i = 0; i < count; i++) {
 		auto &ni = networks[i];
 		if (ni.rsn_ie != nullptr)
-			IOFree(ni.rsn_ie, 2 + ni.rsn_ie[1]);
+			//IOFree(ni.rsn_ie, 2 + ni.rsn_ie[1]);
+			IOFree(ni.rsn_ie, ni.ie_len);
 	}
 	if (networks && count)
 		IOFree(networks, count * sizeof(NetworkInformation));
@@ -115,111 +116,112 @@ void itlwm::setInterface(IOEthernetInterface* interface) {
     if (!nd || !(fpNetStats = (IONetworkStats *)nd->getBuffer())) {
         XYLog("network statistics buffer unavailable?\n");
     }
+	bzero(ic->ic_rsn_ie_override, 257);
+	
 	ic->ic_if.netStat = fpNetStats;
 
 	interface->retain();
 	ic->ic_if.iface = interface;
 }
 
-void itlwm::setSSID(const char* ssid) {
-	    struct ieee80211com *ic = &com.sc_ic;
+enum apple80211_authtype_lower
+{
+    APPLE80211_AUTHTYPE_OPEN        = 1,    // open
+    APPLE80211_AUTHTYPE_SHARED      = 2,    // shared key
+    APPLE80211_AUTHTYPE_CISCO       = 3,    // cisco net eap
+};
+
+enum apple80211_authtype_upper
+{
+    APPLE80211_AUTHTYPE_NONE         = 0,         //    No upper auth
+    APPLE80211_AUTHTYPE_WPA          = 1 << 0,    //    WPA
+    APPLE80211_AUTHTYPE_WPA_PSK      = 1 << 1,    //    WPA PSK
+    APPLE80211_AUTHTYPE_WPA2         = 1 << 2,    //    WPA2
+    APPLE80211_AUTHTYPE_WPA2_PSK     = 1 << 3,    //    WPA2 PSK
+    APPLE80211_AUTHTYPE_LEAP         = 1 << 4,    //    LEAP
+    APPLE80211_AUTHTYPE_8021X        = 1 << 5,    //    802.1x
+    APPLE80211_AUTHTYPE_WPS          = 1 << 6,    //    WiFi Protected Setup
+	APPLE80211_AUTHTYPE_SHA256_PSK   = 1 << 7,
+	APPLE80211_AUTHTYPE_SHA256_8021X = 1 << 8,
+	APPLE80211_AUTHTYPE_WPA3_SAE     = 1 << 9
+};
+
+void itlwm::associate(uint8_t *ssid, uint32_t ssid_len, const struct ether_addr &bssid, uint32_t authtype_lower, uint32_t authtype_upper, uint8_t *key, uint32_t key_len, int key_index) {
+	struct ieee80211com *ic = &com.sc_ic;
+
+	ieee80211_del_ess(ic, nullptr, 0, 1);
+
 	protect_des_ess = true;
     memset(ic->ic_des_essid, 0, IEEE80211_NWID_LEN);
-    ic->ic_des_esslen = (int)strnlen(ssid, IEEE80211_NWID_LEN);
+    ic->ic_des_esslen = (int)strnlen((const char*)ssid, IEEE80211_NWID_LEN);
     memcpy(ic->ic_des_essid, ssid, ic->ic_des_esslen);
-	ic->ic_flags &= ~IEEE80211_F_AUTO_JOIN;
-	// We create the ESS because WEP can have multiple keys
-}
-
-void itlwm::setOpen() {
-	struct ieee80211com *ic = &com.sc_ic;
-
-	ieee80211_del_ess(ic, nullptr, 0, 1);
 
 	ieee80211_join join;
 	bzero(&join, sizeof(ieee80211_join));
-
+	
 	join.i_len = ic->ic_des_esslen;
 	memcpy(join.i_nwid, ic->ic_des_essid, join.i_len);
-
-	join.i_nwkey.i_wepon = IEEE80211_NWKEY_OPEN;
-	join.i_flags = IEEE80211_JOIN_NWKEY;
-
-	ieee80211_add_ess(ic, &join);
-	ic->ic_flags &= ~IEEE80211_F_AUTO_JOIN;
-}
-
-void itlwm::setWEPKey(const u_int8_t *key, size_t key_len, int key_index) {
-	struct ieee80211com *ic = &com.sc_ic;
-
-	ieee80211_del_ess(ic, nullptr, 0, 1);
-
-	ieee80211_join join;
-	bzero(&join, sizeof(ieee80211_join));
-
-	join.i_len = ic->ic_des_esslen;
-	memcpy(join.i_nwid, ic->ic_des_essid, join.i_len);
-
-	ieee80211_nwkey& nwkey = join.i_nwkey;
-	nwkey.i_wepon = IEEE80211_NWKEY_WEP;
-	nwkey.i_defkid = key_index + 1;
-	nwkey.i_key[key_index].i_keylen = (int)key_len;
-	nwkey.i_key[key_index].i_keydat = (uint8_t*)IOMalloc(key_len); // TODO: check for null!
-	memcpy(nwkey.i_key[key_index].i_keydat, key, key_len);
-
-	join.i_flags = IEEE80211_JOIN_NWKEY;
-
-	ieee80211_add_ess(ic, &join);
-	ic->ic_flags &= ~IEEE80211_F_AUTO_JOIN;
-}
-
-/// For future use. Requires to be able to transmit packets through the network interface.
-void itlwm::setEAP() {
-	    struct ieee80211com *ic = &com.sc_ic;
-
-	ieee80211_del_ess(ic, nullptr, 0, 1);
-
-	ieee80211_join join;
-	bzero(&join, sizeof(ieee80211_join));
-
-	join.i_len = ic->ic_des_esslen;
-	memcpy(join.i_nwid, ic->ic_des_essid, join.i_len);
-
-	join.i_nwkey.i_wepon = IEEE80211_NWKEY_EAP;
-	join.i_flags = IEEE80211_JOIN_NWKEY | IEEE80211_JOIN_8021X | IEEE80211_JOIN_WPA;
-
-	ieee80211_add_ess(ic, &join);
-	ic->ic_flags &= ~IEEE80211_F_AUTO_JOIN;
-}
-
-void itlwm::setWPAKey(const u_int8_t *key, size_t key_len) {
-	struct ieee80211com *ic = &com.sc_ic;
-
-	ieee80211_del_ess(ic, nullptr, 0, 1);
-
-	ieee80211_join join;
-	bzero(&join, sizeof(ieee80211_join));
-
-	join.i_len = ic->ic_des_esslen;
-	memcpy(join.i_nwid, ic->ic_des_essid, join.i_len);
-
+	
+	bool is_zero = true;
+	for (int i = 0; i < IEEE80211_ADDR_LEN; i++)
+		is_zero &= bssid.octet[i] == 0;
+	
+	if (!is_zero) {
+		IEEE80211_ADDR_COPY(ic->ic_des_bssid, bssid.octet);
+		ic->ic_flags |= IEEE80211_F_DESBSSID;
+	}
+	else {
+		memset(ic->ic_des_bssid, 0, IEEE80211_ADDR_LEN);	
+		ic->ic_flags &= ~IEEE80211_F_DESBSSID;
+	}
+	
 	ieee80211_wpaparams& wpa = join.i_wpaparams;
-	wpa.i_enabled = 1;
-	wpa.i_ciphers = 0;
-	wpa.i_groupcipher = 0;
-	wpa.i_protos = IEEE80211_WPA_PROTO_WPA1 | IEEE80211_WPA_PROTO_WPA2;
-	wpa.i_akms = IEEE80211_WPA_AKM_PSK | IEEE80211_WPA_AKM_8021X | IEEE80211_WPA_AKM_SHA256_PSK | IEEE80211_WPA_AKM_SHA256_8021X;
-	memcpy(wpa.i_name, "zxy", strlen("zxy"));
-
-	ieee80211_wpapsk& psk = join.i_wpapsk;
-	memcpy(psk.i_name, "zxy", strlen("zxy"));
-	psk.i_enabled = 1;
-	memcpy(psk.i_psk, key, sizeof(psk.i_psk));
-
-	join.i_flags = IEEE80211_JOIN_WPAPSK | IEEE80211_JOIN_ANY | IEEE80211_JOIN_WPA | IEEE80211_JOIN_8021X;
-
+	
+	if (authtype_upper & 0xf)
+		wpa.i_enabled = 1;
+	
+	if (authtype_upper & (APPLE80211_AUTHTYPE_WPA | APPLE80211_AUTHTYPE_WPA_PSK)) {
+		wpa.i_protos |= IEEE80211_WPA_PROTO_WPA1;		
+	}
+	if (authtype_upper & (APPLE80211_AUTHTYPE_WPA2 | APPLE80211_AUTHTYPE_WPA2_PSK)) {
+		wpa.i_protos |= IEEE80211_WPA_PROTO_WPA2;		
+	}
+	
+	if (authtype_upper & (APPLE80211_AUTHTYPE_WPA_PSK | APPLE80211_AUTHTYPE_WPA2_PSK)) {
+		wpa.i_akms |= IEEE80211_WPA_AKM_PSK | IEEE80211_WPA_AKM_SHA256_PSK;		
+		ieee80211_wpapsk& psk = join.i_wpapsk;
+		psk.i_enabled = 1;
+		memcpy(psk.i_psk, key, sizeof(psk.i_psk));
+		join.i_flags = IEEE80211_JOIN_WPA | IEEE80211_JOIN_WPAPSK;
+	}
+	if (authtype_upper & (APPLE80211_AUTHTYPE_WPA | APPLE80211_AUTHTYPE_WPA2)) {
+		wpa.i_akms |= IEEE80211_WPA_AKM_8021X | IEEE80211_WPA_AKM_SHA256_8021X;				
+		join.i_flags = IEEE80211_JOIN_WPA | IEEE80211_JOIN_8021X;
+	}
+	
+	if (authtype_lower == APPLE80211_AUTHTYPE_SHARED) {
+		XYLog("shared key authentication is not supported!\n");
+		return;
+	}
+	
+	if (authtype_upper == APPLE80211_AUTHTYPE_NONE && authtype_lower == APPLE80211_AUTHTYPE_OPEN) { // Open or WEP Open System
+		ieee80211_nwkey& nwkey = join.i_nwkey;
+		if (key_len > 0) {
+			nwkey.i_wepon = IEEE80211_NWKEY_WEP;
+			nwkey.i_defkid = key_index + 1;
+			nwkey.i_key[key_index].i_keylen = (int)key_len;
+			nwkey.i_key[key_index].i_keydat = (uint8_t*)IOMalloc(key_len); // TODO: check for null!
+			memcpy(nwkey.i_key[key_index].i_keydat, key, key_len);
+		}
+		else
+			nwkey.i_wepon = IEEE80211_NWKEY_OPEN;
+		join.i_flags |= IEEE80211_JOIN_NWKEY;
+	}
+	
 	ieee80211_add_ess(ic, &join);
     ic->ic_flags &= ~IEEE80211_F_AUTO_JOIN;
+	
+	ieee80211_switch_ess(ic);
 }
 
 void itlwm::enable() {
@@ -233,13 +235,148 @@ void itlwm::disable() {
 void itlwm::getRSNIE(uint16_t &ie_len, uint8_t ie_buf[257]) {
 	struct ieee80211com *ic = &com.sc_ic;
 	struct ieee80211_node	* bss = com.sc_ic.ic_bss;
-	if (!(ic->ic_state == IEEE80211_S_RUN || ic->ic_state == IEEE80211_S_AUTH || ic->ic_state == IEEE80211_S_ASSOC) || bss == nullptr || bss->ni_rsnie == nullptr) {
+	if (ic->ic_state < IEEE80211_S_AUTH || bss == nullptr || bss->ni_rsnie == nullptr) {
 		ie_len = 0;
 		bzero(ie_buf, 257);
+	}
+	else if (ic->ic_rsn_ie_override[1] > 0) {
+		ie_len = 2 + ic->ic_rsn_ie_override[1];
+		memcpy(ie_buf, ic->ic_rsn_ie_override, ie_len);
 	}
 	else {
 		ie_len = 2 + bss->ni_rsnie[1];
 		memcpy(ie_buf, bss->ni_rsnie, ie_len);
+	}
+}
+
+void itlwm::setRSN_IE(const u_int8_t *ie) {
+	struct ieee80211com *ic = &com.sc_ic;
+	memcpy(ic->ic_rsn_ie_override, ie, 257);
+	if (ic->ic_state == IEEE80211_S_RUN && ic->ic_bss != nullptr)
+		ieee80211_save_ie(ie, &ic->ic_bss->ni_rsnie);
+}
+
+void itlwm::getAP_IE_LIST(uint32_t &ie_list_len, uint8_t *ie_buf) {
+	struct ieee80211com *ic = &com.sc_ic;
+	struct ieee80211_node	* bss = com.sc_ic.ic_bss;
+	if (ic->ic_state < IEEE80211_S_AUTH || bss == nullptr || bss->ni_ie_list == nullptr || bss->ni_ie_list_len > ie_list_len) {
+		bzero(ie_buf, ie_list_len);
+		ie_list_len = 0;
+	}
+	else {
+		ie_list_len = bss->ni_ie_list_len;
+		memcpy(ie_buf, bss->ni_ie_list, ie_list_len);
+	}
+	XYLog("%s: len %d, state %d, bss %d, ie_list %d, ie_list_len %d\n", __FUNCTION__, ie_list_len, ic->ic_state, bss && true, bss && bss->ni_ie_list, bss ? bss->ni_ie_list_len : 0);
+}
+
+void itlwm::setPMKSA(const u_int8_t *key, size_t key_len) {
+	struct ieee80211com *ic = &com.sc_ic;
+	struct ieee80211_node	* ni = com.sc_ic.ic_bss;
+
+	memcpy(ni->ni_pmk, key, key_len);
+    ni->ni_flags |= IEEE80211_NODE_PMK;
+	XYLog("%s: Not implemented\n", __FUNCTION__);
+}
+
+void itlwm::setPTK(const u_int8_t *key, size_t key_len) {
+	struct ieee80211com *ic = &com.sc_ic;
+	struct ieee80211_node	* ni = com.sc_ic.ic_bss;
+	struct ieee80211_key *k;
+	int keylen;
+	
+	ni->ni_rsn_supp_state = RNSA_SUPP_PTKDONE;
+	
+	if (ni->ni_rsncipher != IEEE80211_CIPHER_USEGROUP/* &&
+		(ni->ni_flags & IEEE80211_NODE_RSN_NEW_PTK)*/) {
+		u_int64_t prsc;
+		
+		/* check that key length matches that of pairwise cipher */
+		keylen = ieee80211_cipher_keylen(ni->ni_rsncipher);
+		if (key_len != keylen) {
+			XYLog("itlwm: PTK length mismatch. expected %d, got %zu\n", keylen, key_len);
+			return;
+		}
+		prsc = /*(gtk == NULL) ? LE_READ_6(key->rsc) :*/ 0;
+		
+		/* map PTK to 802.11 key */
+		k = &ni->ni_pairwise_key;
+		memset(k, 0, sizeof(*k));
+		k->k_cipher = ni->ni_rsncipher;
+		k->k_rsc[0] = prsc;
+		k->k_len = keylen;
+		memcpy(k->k_key, key, k->k_len);
+		/* install the PTK */
+		if ((*ic->ic_set_key)(ic, ni, k) != 0) {
+			XYLog("setting PTK failed\n");
+			return;
+		}
+		else {
+			XYLog("itlwm: set PTK successfully\n");
+		}
+		ni->ni_flags &= ~IEEE80211_NODE_RSN_NEW_PTK;
+		ni->ni_flags &= ~IEEE80211_NODE_TXRXPROT;
+		ni->ni_flags |= IEEE80211_NODE_RXPROT;
+	} else if (ni->ni_rsncipher != IEEE80211_CIPHER_USEGROUP)
+		XYLog("%s: unexpected pairwise key update received from %s\n",
+			  ic->ic_if.if_xname, ether_sprintf(ni->ni_macaddr));
+	
+}
+
+#define LE_READ_6(p)						\
+((u_int64_t)(p)[5] << 40 | (u_int64_t)(p)[4] << 32 |	\
+ (u_int64_t)(p)[3] << 24 | (u_int64_t)(p)[2] << 16 |	\
+ (u_int64_t)(p)[1] <<  8 | (u_int64_t)(p)[0])
+
+void itlwm::setGTK(const u_int8_t *gtk, size_t key_len, u_int8_t kid, u_int8_t *rsc) {
+	struct ieee80211com *ic = &com.sc_ic;
+	struct ieee80211_node	* ni = com.sc_ic.ic_bss;
+	struct ieee80211_key *k;
+	int keylen;
+	
+	if (gtk != NULL) {
+		/* check that key length matches that of group cipher */
+		keylen = ieee80211_cipher_keylen(ni->ni_rsngroupcipher);
+		if (key_len != keylen) {
+			XYLog("itlwm: GTK length mismatch. expected %d, got %zu\n", keylen, key_len);
+			return;
+		}
+		/* map GTK to 802.11 key */
+		k = &ic->ic_nw_keys[kid];
+		memset(k, 0, sizeof(*k));
+		k->k_id = kid;    /* 0-3 */
+		k->k_cipher = ni->ni_rsngroupcipher;
+		k->k_flags = IEEE80211_KEY_GROUP;
+		//if (gtk[6] & (1 << 2))
+		//	k->k_flags |= IEEE80211_KEY_TX;
+		k->k_rsc[0] = LE_READ_6(rsc);
+		k->k_len = keylen;
+		memcpy(k->k_key, gtk, k->k_len);
+		/* install the GTK */
+		if ((*ic->ic_set_key)(ic, ni, k) != 0) {
+			XYLog("setting GTK failed\n");
+			return;
+		}
+		else {
+			XYLog("itlwm: set PTK successfully\n");
+		}
+	}
+	
+	if (true) {
+		ni->ni_flags |= IEEE80211_NODE_TXRXPROT;
+#ifndef IEEE80211_STA_ONLY
+		if (ic->ic_opmode != IEEE80211_M_IBSS ||
+			++ni->ni_key_count == 2)
+#endif
+		{
+			XYLog("marking port %s valid\n",
+					 ether_sprintf(ni->ni_macaddr));
+			ni->ni_port_valid = 1;
+			ieee80211_set_link_state(ic, LINK_STATE_UP);
+			ni->ni_assoc_fail = 0;
+			if (ic->ic_opmode == IEEE80211_M_STA)
+				ic->ic_rsngroupcipher = ni->ni_rsngroupcipher;
+		}
 	}
 }
 
@@ -263,19 +400,10 @@ void itlwm::disassociate() {
 	ieee80211_set_link_state(ic, LINK_STATE_DOWN);
 	ieee80211_del_ess(ic, nullptr, 0, 1);
 	ieee80211_deselect_ess(ic);
-	iwm_disassoc(&com);
+	ic->ic_rsn_ie_override[1] = 0;
 	ic->ic_flags |= IEEE80211_F_AUTO_JOIN; // prevent from joining non-requested open networks
+	ieee80211_new_state(ic, IEEE80211_S_SCAN, -1);
 	//ic->ic_xflags |= IEEE80211_F_EXTERNAL_MGMT;
-}
-
-void itlwm::associate() {
-    XYLog("%s\n", __FUNCTION__);
-	struct ieee80211com *ic = &com.sc_ic;
-	protect_des_ess = true;
-	ic->ic_flags &= ~IEEE80211_F_AUTO_JOIN;
-	ic->ic_xflags &= ~IEEE80211_F_EXTERNAL_MGMT; // let it scan and join
-	ieee80211_switch_ess(ic);
-	//ieee80211_set_link_state(ic, LINK_STATE_UP);
 }
 
 IOReturn itlwm::bgscan(uint8_t* channels, uint32_t length, const char* ssid, uint32_t ssid_len) {
@@ -291,9 +419,13 @@ IOReturn itlwm::bgscan(uint8_t* channels, uint32_t length, const char* ssid, uin
 		}
 		else {
 			ic->ic_bgscan_all_channels = false;
-			bzero(ic->ic_chan_scan_target, sizeof(ic->ic_chan_scan_target));
+			u_char ic_chan_scan_target[howmany(IEEE80211_CHAN_MAX,NBBY)];
+			bzero(ic_chan_scan_target, sizeof(ic_chan_scan_target));
+			setbit(ic_chan_scan_target, channels[ieee80211_chan2ieee(ic, ic->ic_bss->ni_chan)]);
 			for (int i = 0; i < length; i++)
-				setbit(ic->ic_chan_scan_target, channels[i]);
+				setbit(ic_chan_scan_target, channels[i]);
+			static_assert(sizeof(ic->ic_chan_scan_target) == sizeof(ic_chan_scan_target), "arrays should have equal size");
+			memcpy(ic->ic_chan_scan_target, ic_chan_scan_target, sizeof(ic_chan_scan_target)); // don't bzero the original array if the scan is in progress
 		}
 
 		if (!timeout_pending(&ic->ic_bgscan_timeout) &&
@@ -533,7 +665,7 @@ UInt32 itlwm::outputPacket(mbuf_t m, void *param)
 	//    XYLog("%s\n", __FUNCTION__);
     ifnet *ifp = &com.sc_ic.ic_ac.ac_if;
 
-    if (com.sc_ic.ic_state != IEEE80211_S_RUN || ifp == NULL || ifp->if_snd == NULL) {
+    if (com.sc_ic.ic_state < IEEE80211_S_AUTH || ifp == NULL || ifp->if_snd == NULL) {
         fController->freePacket(m);
         return kIOReturnOutputDropped;
     }

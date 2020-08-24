@@ -337,7 +337,7 @@ ieee80211_ess_setwpaparms(struct ieee80211_ess *ess,
     ess->flags |= IEEE80211_F_RSNON;
     
     if (ess->rsnakms &
-        (IEEE80211_AKM_8021X|IEEE80211_WPA_AKM_SHA256_8021X))
+        (IEEE80211_AKM_8021X|IEEE80211_AKM_SHA256_8021X))
         ess->flags |= IEEE80211_JOIN_8021X;
     
     return ENETRESET;
@@ -1420,7 +1420,7 @@ ieee80211_end_scan(struct ifnet *ifp)
     }
 #endif
 #ifdef AIRPORT
-	if (bgscan && !ic->ic_bgscan_all_channels) { // Don't switch networks after partial scan!
+	if (bgscan /*&& !ic->ic_bgscan_all_channels*/) { // Don't switch networks after partial scan!
 		ic->ic_bgscan_fail = 0;
 		ic->ic_flags &= ~IEEE80211_F_BGSCAN;
 		return;
@@ -1628,6 +1628,13 @@ ieee80211_node_cleanup(struct ieee80211com *ic, struct ieee80211_node *ni)
         IOFree(ni->ni_rsnie, 2 + ni->ni_rsnie[1]);
         ni->ni_rsnie = NULL;
     }
+#ifdef AIRPORT
+	if (ni->ni_ie_list != NULL) {
+		// FIXME: free
+	//	IOFree(ni->ni_ie_list, ni->ni_ie_list_len);
+		ni->ni_ie_list = NULL;
+	}
+#endif
     ieee80211_ba_del(ni);
     ieee80211_ba_free(ni);
     IOFree(ni->ni_unref_arg, ni->ni_unref_arg_size);
@@ -1655,6 +1662,10 @@ ieee80211_node_copy(struct ieee80211com *ic,
     dst->ni_rsnie = NULL;
     if (src->ni_rsnie != NULL)
         ieee80211_save_ie(src->ni_rsnie, &dst->ni_rsnie);
+#ifdef AIRPORT
+	if (src->ni_ie_list != NULL)
+		ieee80211_save_ie_list(src->ni_ie_list, src->ni_ie_list_len, &dst->ni_ie_list, &dst->ni_ie_list_len);
+#endif
     ieee80211_node_set_timeouts(dst);
 #ifndef IEEE80211_STA_ONLY
     mq_init(&dst->ni_savedq, IEEE80211_PS_MAX_QUEUE, IPL_NET);
