@@ -21,6 +21,10 @@ extern "C" {
 #include <IOKit/IOInterruptController.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/network/IONetworkMedium.h>
+#ifdef AIRPORT
+#include <IOKit/pwr_mgt/RootDomain.h>
+#include <IOKit/pwr_mgt/IOPM.h>
+#endif
 #include <net/ethernet.h>
 #include "sha1.h"
 #include <net80211/ieee80211_node.h>
@@ -307,6 +311,12 @@ static void register_self()
 	self->registerService();
 }
 
+#ifdef AIRPORT
+IOReturn sleepHandler(void * target, void * refCon,
+					  UInt32 messageType, IOService * provider,
+					  void * messageArgument, vm_size_t argSize);
+#endif
+
 bool itlwm::start(IOService *provider)
 {
     if (!super::start(provider)) {
@@ -332,6 +342,9 @@ bool itlwm::start(IOService *provider)
 	self = this;
 	if (net_init_add(register_self) == EALREADY) 
 		registerService();
+
+	registerPrioritySleepWakeInterest(&sleepHandler, this, NULL);
+
     return true;
 #else	
 	if (!createWorkLoop()) {

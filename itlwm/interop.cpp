@@ -16,6 +16,8 @@
 #include <IOKit/IOInterruptController.h>
 #include <IOKit/IOCommandGate.h>
 #include <IOKit/network/IONetworkMedium.h>
+#include <IOKit/pwr_mgt/RootDomain.h>
+#include <IOKit/pwr_mgt/IOPM.h>
 #include <net/ethernet.h>
 #include "sha1.h"
 #include <net80211/ieee80211_node.h>
@@ -24,6 +26,50 @@
 #include "interop.hpp"
 
 OSDefineMetaClassAndStructors(ScanResult, OSObject)
+
+static IOReturn sleep(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3) {
+	itlwm *self = (itlwm*)target;
+	self->disable();
+	return kIOReturnSuccess;
+}
+
+static IOReturn wake(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3) {
+	((itlwm*)target)->enable();
+	return kIOReturnSuccess;
+}
+
+IOReturn sleepHandler( void * target, void * refCon,
+                        UInt32 messageType, IOService * provider,
+                        void * messageArgument, vm_size_t argSize)
+{
+	static bool first = true;
+    itlwm *self = (itlwm*)target;
+	switch (messageType)
+    {
+        case kIOMessageSystemWillPowerOff:
+        case kIOMessageSystemWillRestart:
+        case kIOMessageSystemWillSleep:
+			self->getCommandGate()->attemptAction(sleep, self);
+            break;
+			
+		case kIOMessageSystemHasPoweredOn:
+			self->getCommandGate()->enable();
+			self->getCommandGate()->runAction(wake);
+			// fall through
+		case kIOMessageSystemWillPowerOn:
+	       break;
+    }
+	// on first notification after boot gRootDomain is still nullptr
+	if (first) {
+		first = false;
+		XYLog("skipped acknowledgement for message %x\n", messageType);
+		return kIOReturnSuccess;
+	}
+	acknowledgeSleepWakeNotification(refCon); // this method dereferences gRootDomain
+	return kIOReturnSuccess;
+}
+
+
 
 bool ScanResult::init() {
 	count = 0;
@@ -39,7 +85,6 @@ void ScanResult::free() {
 	for (int i = 0; i < count; i++) {
 		auto &ni = networks[i];
 		if (ni.rsn_ie != nullptr)
-			//IOFree(ni.rsn_ie, 2 + ni.rsn_ie[1]);
 			IOFree(ni.rsn_ie, ni.ie_len);
 	}
 	if (networks && count)
