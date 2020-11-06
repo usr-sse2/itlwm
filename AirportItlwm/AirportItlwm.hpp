@@ -118,6 +118,8 @@ public:
     virtual SInt32 performCountryCodeOperation(IO80211Interface* interface, IO80211CountryCodeOp op) override;
     virtual SInt32 enableFeature(IO80211FeatureCode code, void* data) override;
     
+    virtual IOOutputQueue *createOutputQueue() override;
+    
     //AirportSTAIOCTL
     FUNC_IOCTL(SSID, apple80211_ssid_data)
     FUNC_IOCTL(AUTH_TYPE, apple80211_authtype_data)

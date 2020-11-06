@@ -535,7 +535,10 @@ ieee80211_encap(struct _ifnet *ifp, mbuf_t m, struct ieee80211_node **pni)
 	u_int8_t *addr;
 	u_int dlt, hdrlen;
 	int addqos, tid = 0;
+    //void *tag_data;
+    //size_t tag_len;
 
+    //mbuf_tag_id_find("com.zxystd.AirportItlwm", &mtag);
 	/* Handle raw frames if mbuf is tagged as 802.11 */
     if (0) {
 //    if (mbuf_tag_find(m, mtag, (mbuf_tag_type_t)PACKET_TAG_DLT, &tag_len, (void**)&tag_data) == 0) {

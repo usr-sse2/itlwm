@@ -1737,7 +1737,7 @@ ieee80211_setup_node(struct ieee80211com *ic,
 {
     int i, s;
     
-    XYLog("%s %s\n", __FUNCTION__, ether_sprintf((u_int8_t *)macaddr));
+    //XYLog("%s %s\n", __FUNCTION__, ether_sprintf((u_int8_t *)macaddr));
     IEEE80211_ADDR_COPY(ni->ni_macaddr, macaddr);
     ieee80211_node_newstate(ni, IEEE80211_STA_CACHE);
     
@@ -1771,7 +1771,7 @@ ieee80211_alloc_node(struct ieee80211com *ic, const u_int8_t *macaddr)
 struct ieee80211_node *
 ieee80211_dup_bss(struct ieee80211com *ic, const u_int8_t *macaddr)
 {
-    XYLog("%s %d\n", __FUNCTION__, __LINE__);
+    //XYLog("%s %d\n", __FUNCTION__, __LINE__);
     struct ieee80211_node *ni = ieee80211_alloc_node_helper(ic);
     if (ni != NULL) {
         ieee80211_setup_node(ic, ni, macaddr);
@@ -2072,13 +2072,13 @@ void ieee80211_ba_free(struct ieee80211_node *ni)
 void
 ieee80211_free_node(struct ieee80211com *ic, struct ieee80211_node *ni)
 {
-    XYLog("%s\n", __FUNCTION__);
+    //XYLog("%s\n", __FUNCTION__);
     if (ni == ic->ic_bss)
         panic("freeing bss node");
     
     splassert(IPL_NET);
     
-    DPRINTF(("%s, %s\n", __FUNCTION__, ether_sprintf(ni->ni_macaddr)));
+    //DPRINTF(("%s, %s\n", __FUNCTION__, ether_sprintf(ni->ni_macaddr)));
 #ifndef IEEE80211_STA_ONLY
     timeout_del(&ni->ni_eapol_to);
     timeout_free(&ni->ni_eapol_to);
@@ -2105,8 +2105,8 @@ ieee80211_release_node(struct ieee80211com *ic, struct ieee80211_node *ni)
 {
     int s;
     
-    DPRINTF(("%s refcnt %u\n", ether_sprintf(ni->ni_macaddr),
-             ni->ni_refcnt));
+    //DPRINTF(("%s refcnt %u\n", ether_sprintf(ni->ni_macaddr),
+    //         ni->ni_refcnt));
     s = splnet();
     if (ieee80211_node_decref(ni) == 0) {
         if (ni->ni_unref_cb) {
@@ -2128,7 +2128,7 @@ ieee80211_free_allnodes(struct ieee80211com *ic, int clear_ic_bss)
     struct ieee80211_node *ni, *next_ni;
     int s;
     
-    DPRINTF(("freeing all nodes\n"));
+    //DPRINTF(("freeing all nodes\n"));
     s = splnet();
     for (ni = RB_MIN(ieee80211_tree, &ic->ic_tree);
          ni != NULL; ni = next_ni) {

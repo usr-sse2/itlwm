@@ -32,10 +32,11 @@
 #ifndef _NET80211_IEEE80211_PRIV_H_
 #define _NET80211_IEEE80211_PRIV_H_
 
+#define IEEE80211_DEBUG
 #ifdef IEEE80211_DEBUG
 extern int ieee80211_debug;
 #define DPRINTF(X) do {				\
-	if (ieee80211_debug) {			\
+	if (true || ieee80211_debug) {			\
 		XYLog("%s ieee80211: ", __FUNCTION__);	\
 		XYLog X;			\
 	}					\

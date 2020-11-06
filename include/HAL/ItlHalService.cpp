@@ -26,7 +26,22 @@ initWithController(IOEthernetController *controller, IOWorkLoop *workloop, IOCom
     this->mainWorkLoop->retain();
     this->mainCommandGate = commandGate;
     this->mainCommandGate->retain();
+    this->timerEventSource = IOTimerEventSource::timerEventSource(this);
+    if (!timerEventSource) {
+        XYLog("failed to create timer event source!\n");
+        return false;
+    }
+    
+    workloop->addEventSource(timerEventSource);
+    timerEventSource->enable();
+
     return true;
+}
+
+IOTimerEventSource *ItlHalService::
+getTimerEventSource()
+{
+    return this->timerEventSource;
 }
 
 IOEthernetController *ItlHalService::
@@ -81,17 +96,16 @@ void ItlHalService::
 free()
 {
     XYLog("ItlHalService %s\n", __FUNCTION__);
-    if (this->mainWorkLoop) {
-        this->mainWorkLoop->release();
+    if (timerEventSource) {
+        timerEventSource->disable();
+        if (mainWorkLoop) {
+            mainWorkLoop->removeEventSource(timerEventSource);
+        }
+        OSSafeReleaseNULL(timerEventSource);
     }
-    this->mainWorkLoop = NULL;
-    if (this->mainCommandGate) {
-        this->mainCommandGate->release();
-    }
-    this->mainCommandGate = NULL;
-    if (this->controller) {
-        this->controller->release();
-    }
-    this->controller = NULL;
+    
+    OSSafeReleaseNULL(mainWorkLoop);
+    OSSafeReleaseNULL(mainCommandGate);
+    OSSafeReleaseNULL(controller);
     super::free();
 }

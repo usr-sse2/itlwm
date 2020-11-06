@@ -3615,6 +3615,7 @@ iwx_rx_tx_cmd(struct iwx_softc *sc, struct iwx_rx_packet *pkt,
              * I guess net80211 does all sorts of stunts in
              * interrupt context, so maybe this is no biggie.
              */
+            getController()->getOutputQueue()->service();
             (*ifp->if_start)(ifp);
         }
     }
@@ -6872,6 +6873,7 @@ iwx_stop(struct _ifnet *ifp)
     ifp->if_flags &= ~IFF_RUNNING;
     ifq_clr_oactive(&ifp->if_snd);
     ifp->if_snd->flush();
+    getController()->getOutputQueue()->service();
     
     if (in != NULL) {
         in->in_phyctxt = NULL;
@@ -8798,7 +8800,7 @@ iwx_attach(struct iwx_softc *sc, struct pci_attach_args *pa)
     ic->ic_max_rssi = IWX_MAX_DBM - IWX_MIN_DBM;
     
     ifp->controller = getController();
-    ifp->if_snd = IOPacketQueue::withCapacity(4096);
+    ifp->if_snd = IOPacketQueue::withCapacity(IWX_TX_RING_HIMARK);
     ifp->if_softc = sc;
     ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST | IFF_DEBUG;
     ifp->if_ioctl = iwx_ioctl;

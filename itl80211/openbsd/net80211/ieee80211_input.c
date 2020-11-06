@@ -1513,12 +1513,12 @@ ieee80211_parse_vhtopmode(struct ieee80211_node *ni, const uint8_t *ie)
     ni->ni_vht_chan2 = ie[4];
     ni->ni_vht_basicmcs = le16dec(ie + 5);
 
-    DPRINTF(("%s: chan1=%d, chan2=%d, chanwidth=%d, basicmcs=0x%04x\n",
+    /*DPRINTF(("%s: chan1=%d, chan2=%d, chanwidth=%d, basicmcs=0x%04x\n",
         __func__,
         ni->ni_vht_chan1,
         ni->ni_vht_chan2,
         ni->ni_vht_chanwidth,
-        ni->ni_vht_basicmcs));
+        ni->ni_vht_basicmcs));*/
 }
 
 /*

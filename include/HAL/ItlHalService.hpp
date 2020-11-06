@@ -65,10 +65,13 @@ protected:
     
     IOWorkLoop *getMainWorkLoop();
     
+    IOTimerEventSource *getTimerEventSource();
+    
 private:
     IOEthernetController *controller;
     IOCommandGate *mainCommandGate;
     IOWorkLoop *mainWorkLoop;
+    IOTimerEventSource *timerEventSource;
 };
 
 #endif /* ItlHalService_hpp */

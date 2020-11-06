@@ -773,6 +773,7 @@ iwm_rx_tx_cmd(struct iwm_softc *sc, struct iwm_rx_packet *pkt,
              * I guess net80211 does all sorts of stunts in
              * interrupt context, so maybe this is no biggie.
              */
+            getController()->getOutputQueue()->service();
             (*ifp->if_start)(ifp);
         }
     }
@@ -2586,21 +2587,26 @@ iwm_init(struct _ifnet *ifp)
     return 0;
 }
 
-IOReturn ItlIwm::
-_iwm_start_task(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3)
+void ItlIwm::
+_iwm_start_task(OSObject *self, ...)
 {
-    struct _ifnet *ifp = (struct _ifnet *)arg0;
-    struct iwm_softc *sc = (struct iwm_softc*)ifp->if_softc;
-    ItlIwm *that = container_of(sc, ItlIwm, com);
+    XYLog("%s\n", __FUNCTION__);
+
+    ItlIwm *that = (ItlIwm*)self;
+    struct iwm_softc *sc = &that->com;
     struct ieee80211com *ic = &sc->sc_ic;
+    struct _ifnet *ifp = &ic->ic_ac.ac_if;
     struct ieee80211_node *ni;
     struct ether_header *eh;
     mbuf_t m;
     int ac = EDCA_AC_BE; /* XXX */
     
     if (!(ifp->if_flags & IFF_RUNNING) || ifq_is_oactive(&ifp->if_snd)) {
-        return kIOReturnOutputDropped;
+        XYLog("Not running or not active\n");
+        return;
     }
+    
+    int i = 0;
     
     for (;;) {
         /* why isn't this done per-queue? */
@@ -2658,6 +2664,7 @@ _iwm_start_task(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3
             continue;
         }
         ifp->netStat->outputPackets++;
+        i++;
         
         if (ifp->if_flags & IFF_UP) {
             sc->sc_tx_timer = 15;
@@ -2665,18 +2672,27 @@ _iwm_start_task(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3
         }
     }
     
-    return kIOReturnSuccess;
+    XYLog("Successfully output %d packets\n", i);
+    
+    return;
 }
 
 void ItlIwm::
 iwm_start(struct _ifnet *ifp)
 {
+    XYLog("%s\n", __FUNCTION__);
     struct iwm_softc *sc = (struct iwm_softc*)ifp->if_softc;
     ItlIwm *that = container_of(sc, ItlIwm, com);
 //        if (that->outputThreadSignal) {
 //            semaphore_signal(that->outputThreadSignal);
 //        }
-    that->getMainCommandGate()->attemptAction(_iwm_start_task, &that->com.sc_ic.ic_ac.ac_if);
+    that->getTimerEventSource()->setAction(_iwm_start_task);
+    that->getTimerEventSource()->enable();
+    IOReturn status = that->getTimerEventSource()->setTimeoutUS(1);
+    if (status != kIOReturnSuccess) {
+        XYLog("Failed to set timeout: %d\n", status);
+    }
+    //that->getMainCommandGate()->attemptAction(_iwm_start_task, &that->com.sc_ic.ic_ac.ac_if);
 //    _iwm_start_task(that, &that->com.sc_ic.ic_ac.ac_if, NULL, NULL, NULL);
 }
 
@@ -2714,6 +2730,7 @@ iwm_stop(struct _ifnet *ifp)
     ifp->if_flags &= ~IFF_RUNNING;
     ifp->if_snd->flush();
     ifq_clr_oactive(&ifp->if_snd);
+    getController()->getOutputQueue()->service();
     
     in->in_phyctxt = NULL;
     if (ic->ic_state == IEEE80211_S_RUN)
@@ -3833,7 +3850,7 @@ iwm_attach(struct iwm_softc *sc, struct pci_attach_args *pa)
     ic->ic_max_rssi = IWM_MAX_DBM - IWM_MIN_DBM;
     
     ifp->controller = getController();
-    ifp->if_snd = IOPacketQueue::withCapacity(4096);
+    ifp->if_snd = IOPacketQueue::withCapacity(IWM_TX_RING_HIMARK);
     ifp->if_softc = sc;
     ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST | IFF_DEBUG;
     ifp->if_ioctl = iwm_ioctl;

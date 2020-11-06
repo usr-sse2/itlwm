@@ -114,6 +114,11 @@ bool AirportItlwm::configureInterface(IONetworkInterface *netif) {
     return true;
 }
 
+IOOutputQueue *AirportItlwm::createOutputQueue()
+{
+    return IOBasicOutputQueue::withTarget(this, IWM_TX_RING_HIMARK);
+}
+
 IONetworkInterface *AirportItlwm::createInterface()
 {
     AirportItlwmInterface *netif = new AirportItlwmInterface;
@@ -631,6 +636,7 @@ UInt32 AirportItlwm::outputPacket(mbuf_t m, void *param)
     _ifnet *ifp = &fHalService->get80211Controller()->ic_ac.ac_if;
     
     if (fHalService->get80211Controller()->ic_state < IEEE80211_S_AUTH || ifp == NULL || ifp->if_snd == NULL) {
+        XYLog("%s state is %d!!!\n", __FUNCTION__, fHalService->get80211Controller()->ic_state);
         freePacket(m);
         return kIOReturnOutputDropped;
     }
@@ -654,8 +660,8 @@ UInt32 AirportItlwm::outputPacket(mbuf_t m, void *param)
         (*ifp->if_start)(ifp);
         return kIOReturnOutputSuccess;
     } else {
-        freePacket(m);
-        return kIOReturnOutputDropped;
+        XYLog("%s output STALLED\n", __FUNCTION__);
+        return kIOReturnOutputStall;
     }
 }
 

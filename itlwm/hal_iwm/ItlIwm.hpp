@@ -46,12 +46,10 @@ public:
     virtual struct ieee80211com *get80211Controller() override;
     
     static bool intrFilter(OSObject *object, IOFilterInterruptEventSource *src);
-    static IOReturn _iwm_start_task(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3);
+    static void _iwm_start_task(OSObject *self, ...);
     
     void releaseAll();
     
-    struct _ifnet *getIfp();
-    struct iwm_softc *getSoft();
     IOEthernetInterface *getNetworkInterface();
     
     virtual ItlDriverInfo *getDriverInfo() override;

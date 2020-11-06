@@ -23,10 +23,9 @@
 
 #include <IOKit/IOCommandGate.h>
 
-extern IOCommandGate *_fCommandGate;
-
 static IOReturn _if_input(OSObject *target, void *arg0, void *arg1, void *arg2, void *arg3)
 {
+    XYLog("%s\n", __FUNCTION__);
     mbuf_t m;
     bool isEmpty = true;
     struct _ifnet *ifq = (struct _ifnet *)arg0;
@@ -56,6 +55,7 @@ static IOReturn _if_input(OSObject *target, void *arg0, void *arg1, void *arg2, 
 
 int if_input(struct _ifnet *ifq, struct mbuf_list *ml)
 {
-    return _fCommandGate->runAction((IOCommandGate::Action)_if_input, ifq, ml);
+    XYLog("%s\n", __FUNCTION__);
+    return ifq->controller->getCommandGate()->runAction(_if_input, ifq, ml);
 }
 
